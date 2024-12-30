@@ -1,0 +1,25 @@
+# IDEs/Debuggers
+/.vs/
+/.vscode/
+
+# Temp directories for compile
+#/_working/
+
+# IDEs
+*.db
+/xercise.VC.VC.opendb
+*.i
+*.sln
+*.vcxproj*
+.dropbox.device
+
+# output
+*.out
+*.obj
+*.pdb
+*.ilk
+*.exe
+*.lib
+
+# include required libs
+!/lib/*/*.lib
