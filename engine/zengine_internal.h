@@ -3,8 +3,7 @@
 
 #include <zengine.h>
 
-ze_external zErrorCode ZAssets_Init();
-ze_external zErrorCode ZEmbedded_Init();
 ze_external zErrorCode Platform_CreateWindow();
+ze_external zErrorCode ZRGL_Init();
 
 #endif // ZENGINE_INTERNAL_H

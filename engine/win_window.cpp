@@ -50,6 +50,17 @@ extern "C" void Window_SetCursorLock(i32 bLocked)
     }
 }
 
+extern "C" f32 Window_GetMonitorRatio()
+{
+	return g_monitorAspect;
+}
+
+extern "C" f32 Window_GetAspectRatio()
+{
+	return g_windowAspect;
+}
+
+/*
 internal zErrorCode InitRenderer()
 {
     // v-sync - off
@@ -65,6 +76,12 @@ internal zErrorCode InitRenderer()
     glEnable(GL_CULL_FACE);
 
     return ZERROR_CODE_NONE;
+}
+*/
+
+extern "C" void Platform_SwapBuffers()
+{    
+    glfwSwapBuffers(g_window);
 }
 
 extern "C" zErrorCode Platform_CreateWindow()

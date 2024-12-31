@@ -157,295 +157,234 @@ inline zeSize ZE_Copy(void *dest, void *source, zeSize numBytes)
 #define ZMIN(x, y) ((x) < (y) ? (x) : (y))
 #define ZMAX(x, y) ((x) > (y) ? (x) : (y))
 
-///////////////////////////////////////////////////////////////////////
-// DATA TYPES
-///////////////////////////////////////////////////////////////////////
 
-union ColourU32
+#define VEC_X 0
+#define VEC_Y 1
+#define VEC_Z 2
+#define VEC_W 3
+
+/* Matrix use
+OpenGL uses column major, y/x matrices
+/   0   4   8   12  \
+|   1   5   9   13  |
+|   2   6   10  14  |
+\   3   7   11  15  /
+
+*/
+
+// Access Matrix Arrays
+#define M3x3_X0 0
+#define M3x3_X1 1
+#define M3x3_X2 2
+
+#define M3x3_Y0 3
+#define M3x3_Y1 4
+#define M3x3_Y2 5
+
+#define M3x3_Z0 6
+#define M3x3_Z1 7
+#define M3x3_Z2 8
+
+#define M4x4_X0 0
+#define M4x4_X1 1
+#define M4x4_X2 2
+#define M4x4_X3 3
+
+#define M4x4_Y0 4
+#define M4x4_Y1 5
+#define M4x4_Y2 6
+#define M4x4_Y3 7
+
+#define M4x4_Z0 8
+#define M4x4_Z1 9
+#define M4x4_Z2 10
+#define M4x4_Z3 11
+
+#define M4x4_W0 12
+#define M4x4_W1 13
+#define M4x4_W2 14
+#define M4x4_W3 15
+
+inline void M4x4_ToIdentity(f32* m)
 {
-	u8 array[4];
-	struct
+	m[M4x4_X0] = 1;
+    m[M4x4_X1] = 0;
+    m[M4x4_X2] = 0;
+    m[M4x4_X3] = 0;
+
+    m[M4x4_Y0] = 0;
+    m[M4x4_Y1] = 1;
+    m[M4x4_Y2] = 0;
+    m[M4x4_Y3] = 0;
+
+    m[M4x4_Z0] = 0;
+    m[M4x4_Z1] = 0;
+    m[M4x4_Z2] = 1;
+    m[M4x4_Z3] = 0;
+
+    m[M4x4_W0] = 0;
+    m[M4x4_W1] = 0;
+    m[M4x4_W2] = 0;
+    m[M4x4_W3] = 1;
+}
+
+inline void M4x4_Multiply(f32 *m0, f32 *m1, f32 *result)
+{
+	/*
+                    0   4   8   12
+                    1   5   9   13
+                    2   6   10  14
+                    3   7   11  15
+                    |   |   |   |
+    0   4   8   12-
+    1   5   9   13-
+    2   6   10  14-
+    3   7   11  15-
+    */
+
+	f32 r[16];
+
+	r[0] = (m0[0] * m1[0]) + (m0[4] * m1[1]) + (m0[8] * m1[2]) + (m0[12] * m1[3]);
+	r[1] = (m0[1] * m1[0]) + (m0[5] * m1[1]) + (m0[9] * m1[2]) + (m0[13] * m1[3]);
+	r[2] = (m0[2] * m1[0]) + (m0[6] * m1[1]) + (m0[10] * m1[2]) + (m0[14] * m1[3]);
+	r[3] = (m0[3] * m1[0]) + (m0[7] * m1[1]) + (m0[11] * m1[2]) + (m0[15] * m1[3]);
+
+	r[4] = (m0[0] * m1[4]) + (m0[4] * m1[5]) + (m0[8] * m1[6]) + (m0[12] * m1[7]);
+	r[5] = (m0[1] * m1[4]) + (m0[5] * m1[5]) + (m0[9] * m1[6]) + (m0[13] * m1[7]);
+	r[6] = (m0[2] * m1[4]) + (m0[6] * m1[5]) + (m0[10] * m1[6]) + (m0[14] * m1[7]);
+	r[7] = (m0[3] * m1[4]) + (m0[7] * m1[5]) + (m0[11] * m1[6]) + (m0[15] * m1[7]);
+
+	r[8] = (m0[0] * m1[8]) + (m0[4] * m1[9]) + (m0[8] * m1[10]) + (m0[12] * m1[11]);
+	r[9] = (m0[1] * m1[8]) + (m0[5] * m1[9]) + (m0[9] * m1[10]) + (m0[13] * m1[11]);
+	r[10] = (m0[2] * m1[8]) + (m0[6] * m1[9]) + (m0[10] * m1[10]) + (m0[14] * m1[11]);
+	r[11] = (m0[3] * m1[8]) + (m0[7] * m1[9]) + (m0[11] * m1[10]) + (m0[15] * m1[11]);
+
+	r[12] = (m0[0] * m1[12]) + (m0[4] * m1[13]) + (m0[8] * m1[14]) + (m0[12] * m1[15]);
+	r[13] = (m0[1] * m1[12]) + (m0[5] * m1[13]) + (m0[9] * m1[14]) + (m0[13] * m1[15]);
+	r[14] = (m0[2] * m1[12]) + (m0[6] * m1[13]) + (m0[10] * m1[14]) + (m0[14] * m1[15]);
+	r[15] = (m0[3] * m1[12]) + (m0[7] * m1[13]) + (m0[11] * m1[14]) + (m0[15] * m1[15]);
+
+	// copy result
+	result[0] = r[0];
+	result[1] = r[1];
+	result[2] = r[2];
+	result[3] = r[3];
+	result[4] = r[4];
+	result[5] = r[5];
+	result[6] = r[6];
+	result[7] = r[7];
+	result[8] = r[8];
+	result[9] = r[9];
+	result[10] = r[10];
+	result[11] = r[11];
+	result[12] = r[12];
+	result[13] = r[13];
+	result[14] = r[14];
+	result[15] = r[15];
+}
+
+
+internal void M4x4_SetProjection(f32 *m, f32 prjNear, f32 prjFar, f32 prjLeft, f32 prjRight, f32 prjTop, f32 prjBottom)
+{
+	m[0] = (2 * prjNear) / (prjRight - prjLeft);
+	m[4] = 0;
+	m[8] = (prjRight + prjLeft) / (prjLeft - prjRight);
+	m[12] = 0;
+
+	m[1] = 0;
+	m[5] = (2 * prjNear) / (prjTop - prjBottom);
+	m[9] = (prjTop + prjBottom) / (prjTop - prjBottom);
+	m[13] = 0;
+
+	m[2] = 0;
+	m[6] = 0;
+	m[10] = -(prjFar + prjNear) / (prjFar - prjNear);
+	m[14] = (-2 * prjFar * prjNear) / (prjFar - prjNear);
+
+	m[3] = 0;
+	m[7] = 0;
+	m[11] = -1;
+	m[15] = 0;
+}
+
+internal void M4x4_SetOrthoProjection(f32 *m, f32 left, f32 right, f32 top, f32 bottom, f32 prjNear, f32 prjFar)
+{
+#if 1
+	M4x4_ToIdentity(m);
+	m[0] = 2 / (right - left);
+	m[5] = 2 / (top - bottom);
+	m[10] = -2 / (prjFar - prjNear);
+
+	m[12] = -(right + left) / (right - left);
+	m[13] = -(top + bottom) / (top - bottom);
+	m[14] = -(prjFar + prjNear) / (prjFar - prjNear);
+	m[15] = 1;
+#endif
+#if 0
+    m[0] = 2; 
+    m[5] = 2;
+    m[10] = -0.22f;
+
+    m[14] = -1.22f;
+    m[15] = 1;
+#endif
+}
+
+inline void M4x4_SetupOrthoProjection(f32 *m, f32 size, f32 aspectRatio)
+{
+	//M4x4_SetOrthoProjection(m, -1, 1, 1, -1, 0.1f, 20.f);
+	//float size = 40;
+	M4x4_SetOrthoProjection(m,
+							-size * aspectRatio,
+							size * aspectRatio,
+							size,
+							-size,
+							0.1f, 60.f);
+}
+
+inline void ZE_Setup3DProjection(
+	f32 *m4x4,
+	i32 fov,
+	f32 prjScaleFactor,
+	f32 prjNear,
+	f32 prjFar,
+	f32 aspectRatio)
+{
+	if (fov <= 0)
 	{
-		u8 red, green, blue, alpha;
-	};
-	struct
-	{
-		u8 r, g, b, a;
-	};
-	struct
-	{
-		u32 value;
-	};
-};
-
-
-union ColourF32
-{
-	f32 array[4];
-	struct
-	{
-		f32 red, green, blue, alpha;
-	};
-	struct
-	{
-		f32 r, g, b, a;
-	};
-};
-
-#define VEC3_SIZE = 12
-#define VEC2_SIZE = 8
-
-struct Vec2
-{
-	union
-	{
-		struct
-		{
-			f32 x, y;
-		};
-		f32 parts[2];
-	};
-};
-
-struct Vec3
-{
-	union
-	{
-		struct
-		{
-			f32 x, y, z;
-		};
-		f32 parts[3];
-	};
-	// f32 x, y, z, w;
-	// // overload array operator to return a pointer to x + index
-	// f32 &operator[](int index) { return ((&x)[index]); }
-};
-
-const Vec3 vec3_zero = {};
-
-struct Vec4
-{
-	union
-	{
-		struct
-		{
-			f32 x, y, z, w;
-		};
-		f32 e[4];
-	};
-	// f32 x, y, z, w;
-	// // overload array operator to return a pointer to x + index
-	// f32 &operator[](int index) { return ((&x)[index]); }
-};
-
-///////////////////////////////////////////////////////////
-// Asset data types
-///////////////////////////////////////////////////////////
-
-#define ZE_ASSET_TYPE_NONE 0
-#define ZE_ASSET_TYPE_TEXTURE 1
-#define ZE_ASSET_TYPE_MESH 2
-#define ZE_ASSET_TYPE_MATERIAL 3
-#define ZE_ASSET_TYPE_BLOB 4
-
-struct ZRAsset
-{
-	i32 id;
-	i32 index;
-	i32 type;
-	// Data has changed - needs to be re-uploaded
-	i32 bIsDirty;
-	zeSize totalSize;
-	zMemOffset nameOffset;
-	char *fileName;
-	i32 sentinel;
-};
-
-struct ZRTextureHeader
-{
-	i32 width;
-	i32 height;
-	ColourU32 *data;
-};
-
-struct ZRBlobAsset
-{
-	ZRAsset header;
-	void* ptrA;
-	zeSize sizeA;
-	void* ptrB;
-	zeSize sizeB;
-};
-
-struct ZRMaterial
-{
-	ZRAsset header;
-	i32 programId;
-	i32 diffuseTexId;
-	i32 emissionTexId;
-};
-
-struct ZRTexture
-{
-	ZRAsset header;
-	i32 width;
-	i32 height;
-	ColourU32 *data;
-};
-
-struct ZRQuad
-{
-	i32 textureId;
-	Vec2 offset;
-	Vec2 uvMin;
-	Vec2 uvMax;
-	f32 radians;
-	ColourF32 colour;
-};
-
-struct ZRLineVertex
-{
-	Vec3 pos;
-	Vec3 colour;
-	f32 thickness;
-};
-
-// Currently stores every vertex, no sharing
-struct ZRMeshData
-{
-	u32 numVerts;
-	// dynamic mesh may have more capacity.
-	u32 maxVerts;
-
-	f32 *verts;
-	f32 *uvs;
-	f32 *normals;
-
-	Vec3 *GetVert(i32 i)
-	{
-		u8 *mem = (u8 *)verts;
-		mem += (sizeof(Vec3) * i);
-		return (Vec3 *)mem;
+		fov = 90;
 	}
+	M4x4_ToIdentity(m4x4);
+	f32 prjLeft = -prjScaleFactor * aspectRatio;
+	f32 prjRight = prjScaleFactor * aspectRatio;
+	f32 prjTop = prjScaleFactor;
+	f32 prjBottom = -prjScaleFactor;
 
-	void Clear()
-	{
-		this->numVerts = 0;
-	}
-
-	void AddTri(
-		Vec3 v0, Vec3 v1, Vec3 v2,
-		Vec2 uv0, Vec2 uv1, Vec2 uv2,
-		Vec3 n0, Vec3 n1, Vec3 n2)
-	{
-		i32 i = this->numVerts;
-		this->numVerts += 3;
-		// step to
-		i32 vertStride = sizeof(f32) * 3 * i;
-		i32 uvStride = sizeof(f32) * 2 * i;
-		Vec3 *vert = (Vec3 *)((u8 *)verts + vertStride);
-		Vec2 *uv = (Vec2 *)((u8 *)uvs + uvStride);
-		Vec3 *normal = (Vec3 *)((u8 *)normals + vertStride);
-		vert[0] = v0;
-		vert[1] = v1;
-		vert[2] = v2;
-		uv[0] = uv0;
-		uv[1] = uv1;
-		uv[2] = uv2;
-		normal[0] = n0;
-		normal[1] = n1;
-		normal[2] = n2;
-	}
-
-	void AddVert(
-		Vec3 vert,
-		Vec2 uv,
-		Vec3 normal)
-	{
-		if (this->numVerts >= this->maxVerts)
-		{
-			return;
-		}
-		i32 i = this->numVerts;
-		this->numVerts += 1;
-		// step to
-		i32 vertStride = sizeof(Vec3) * i;
-		i32 uvStride = sizeof(Vec2) * i;
-		Vec3 *vertPtr = (Vec3 *)((u8 *)verts + vertStride);
-		Vec2 *uvPtr = (Vec2 *)((u8 *)uvs + uvStride);
-		Vec3 *normalPtr = (Vec3 *)((u8 *)normals + vertStride);
-		vertPtr[0] = vert;
-		uvPtr[0] = uv;
-		normalPtr[0] = normal;
-	}
-
-	i32 MeasureBytes()
-	{
-		i32 bytes = 0;
-		const i32 v3size = sizeof(f32) * 3;
-		const i32 v2size = sizeof(f32) * 2;
-		bytes += v3size * numVerts;
-		bytes += v2size * numVerts;
-		bytes += v3size * numVerts;
-		return bytes;
-	}
-
-	i32 CopyData(ZRMeshData original)
-	{
-		if (original.numVerts > maxVerts)
-		{
-			printf("No space to copy mesh! %d verts have %d\n",
-				   original.numVerts, maxVerts);
-			return ZERROR_CODE_NO_CAPACITY;
-		}
-		// no need to set max verts, we assume we have the capacity for it
-		numVerts = original.numVerts;
-
-		i32 numVertBytes = (sizeof(f32) * 3) * numVerts;
-		i32 numUVSBytes = (sizeof(f32) * 2) * numVerts;
-		printf("Copying %d verts (%d vert bytes, %d uv bytes, %d normal bytes)\n",
-			   numVerts, numVertBytes, numUVSBytes, numVertBytes);
-		// i32 numFloats = numVerts * 3;
-		// for (i32 i = 0; i < numFloats; ++i)
-		// {
-		//     this->verts[i] = original.verts[i];
-		// }
-		ZE_Copy(this->verts, original.verts, numVertBytes);
-		ZE_Copy(this->uvs, original.uvs, numUVSBytes);
-		ZE_Copy(this->normals, original.normals, numVertBytes);
-
-		// ZE_CompareMemory((u8 *)verts, (u8 *)(original.verts), );
-		return ZERROR_CODE_NONE;
-	}
-
-	void PrintVerts()
-	{
-		printf("--- %d of %d verts ---\n", numVerts, maxVerts);
-		f32 *cursor = verts;
-		for (u32 i = 0; i < numVerts; ++i)
-		{
-			printf("%d: %.3f, %.3f, %.3f\n", i, cursor[0], cursor[1], cursor[2]);
-			cursor += 3;
-		}
-	}
-};
-
-struct ZRMeshAsset
-{
-	ZRAsset header;
-	ZRMeshData data;
-};
+	M4x4_SetProjection(
+		m4x4, prjNear, prjFar, prjLeft, prjRight, prjTop, prjBottom);
+}
 
 ///////////////////////////////////////////////////////////////////////
 // FUNCTIONS
 ///////////////////////////////////////////////////////////////////////
 ze_external zErrorCode ZE_EngineInit();
 
-ze_external ZRTexture *ZAssets_AllocTex(i32 width, i32 height, char* name);
+ze_external void ZE_UploadTexture(
+	u8 *pixels, i32 width, i32 height, u32 *handle, i32 bDataTexture = NO);
+ze_external void ZE_UploadMesh(
+	i32 numVerts,
+	f32* verts,
+	f32* uvs,
+	f32* normals,
+	u32* vaoHandle,
+	u32* vboHandle);
 
 ze_external void* Platform_Alloc(zeSize size);
 ze_external void* Platform_Realloc(void* ptr, zeSize size);
 ze_external void Platform_Free(void* ptr);
+ze_external void Platform_SwapBuffers();
+ze_external void ZRGL_DrawTest();
+ze_external f32 Window_GetAspectRatio();
+ze_external f32 Window_GetMonitorRatio();
 
 #endif // ZENGINE_H

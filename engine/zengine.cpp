@@ -49,21 +49,14 @@ static void Platform_InitConsole()
 
 extern "C" zErrorCode ZE_EngineInit()
 {
+	zErrorCode err = ZERROR_CODE_NONE;
 	Platform_InitConsole();
-	ZAssets_Init();
 	Platform_CreateWindow();
+	err = ZRGL_Init();
+	if (err != ZERROR_CODE_NONE)
+	{
+		return err;
+	}
+	ZRGL_DrawTest();
 	return ZERROR_CODE_NONE;
 }
-
-/*
-extern "C" int CALLBACK WinMain(
-    HINSTANCE hInstance,
-    HINSTANCE hPrevInstance,
-    LPSTR lpCmdLine,
-    int nCmdShow)
-{
-	InitConsole();
-	Sleep(2000);
-	return 0;
-}
-*/
