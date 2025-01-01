@@ -536,15 +536,17 @@ ze_external void ZRGL_DrawTest()
     f32 vm[16];
     M4x4_Multiply(model, view, vm);
 
-	M4x4_SetupOrthoProjection(prj, 8, Window_GetAspectRatio());
+	f32 screenHeight = 0.5f;
+
+	M4x4_SetupOrthoProjection(prj, screenHeight, Window_GetAspectRatio());
 
     glUseProgram(g_defaultProgramId);
     ZR_SetProgM4x4(g_defaultProgramId, "u_projection", prj);
     ZR_SetProgM4x4(g_defaultProgramId, "u_modelView", vm);
     ZR_SetProgVec4f(g_defaultProgramId, "u_colour", 1, 1, 1, 1);
     
-    ZR_PrepareTextureUnit2D(g_defaultProgramId, GL_TEXTURE0, 0, "u_diffuseTex", g_magentaTexId, 0);
-    //ZR_PrepareTextureUnit2D(g_defaultProgramId, GL_TEXTURE0, 0, "u_diffuseTex", g_charsetTexId, 0);
+    //ZR_PrepareTextureUnit2D(g_defaultProgramId, GL_TEXTURE0, 0, "u_diffuseTex", g_magentaTexId, 0);
+    ZR_PrepareTextureUnit2D(g_defaultProgramId, GL_TEXTURE0, 0, "u_diffuseTex", g_charsetTexId, 0);
     glBindVertexArray(_quadVAOHandle);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     Platform_SwapBuffers();
@@ -573,12 +575,12 @@ ze_external void ZRGL_AllocTextureU32(i32 imgSize, u8 r, u8 g, u8 b, u8 a, u8** 
 
 ze_internal void ZRGL_LoadCharsetTexture()
 {
-	printf("Load charset tex...\n");
 	u8* pixels = NULL;
 	ZRGL_AllocTextureU32(bw_charset_width, 0, 0, 0, 0, &pixels);
+	printf("Load charset tex...\n");
 	BW_WriteCharsetPixels(pixels);
-	ZRGL_UploadTexture(pixels, 256, 256, &g_charsetTexId, NO);
 	printf("...loaded chartset tex\n");
+	ZRGL_UploadTexture(pixels, 256, 256, &g_charsetTexId, NO);
 }
 
 ze_external zErrorCode ZRGL_Init()
@@ -592,6 +594,7 @@ ze_external zErrorCode ZRGL_Init()
 	printf("Upload test tex...\n");
 	ZRGL_UploadTexture(pixels, 32, 32, &g_magentaTexId, NO);
 	printf("...Uploaded test tex\n");
+	ZRGL_LoadCharsetTexture();
 	//g_magentaTexId = ZRGL_CreateTexture(32, 255, 0, 255, 255);
     /*i32 imgSize = 32;
     i32 numPixels = imgSize * imgSize;

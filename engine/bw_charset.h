@@ -531,15 +531,16 @@ static void BW_WriteCharsetPixels(u8* target)
 	i32 pixelsTotal = 0;
 	i32 pixelsWritten = 0;
 	int targetIndex = 0;
-	for (int sourceIndex = 0; sourceIndex < (bw_charset_width * bw_charset_height); ++sourceIndex)
+	i32 totalPixels = (bw_charset_width / 8) * bw_charset_height;
+	for (int sourceIndex = 0; sourceIndex < totalPixels; ++sourceIndex)
 	{
 		u8 block = bw_charset_bytes[sourceIndex];
 		for (int i = 0; i < 8; ++i)
 		{
-			u8 r = 65;
-			u8 g = 65;
-			u8 b = 65;
-			u8 a = 255;
+			u8 r = 0;
+			u8 g = 0;
+			u8 b = 0;
+			u8 a = 0;
 			if ((block & (1 << i)) != 0)
 			{
 				r = 255;

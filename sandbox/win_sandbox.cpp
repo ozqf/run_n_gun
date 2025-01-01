@@ -48,6 +48,6 @@ extern "C" int CALLBACK WinMain(
 	}
     Sandbox_Run();
 	printf("Waiting 2 seconds\n");
-	Sleep(2000);
+	Sleep(4000);
 	return 0;
 }
