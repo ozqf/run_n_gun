@@ -13,8 +13,9 @@ internal GLFWwindow *g_window;
 internal i32 g_bWindowed = YES;
 internal i32 g_bCursorLocked = NO;
 
-internal i32 g_pendingWidth = 1366; //1024;
-internal i32 g_pendingHeight = 768; //576;
+// dev sizes - 1366x768, 1024x576
+internal i32 g_pendingWidth = 1024;
+internal i32 g_pendingHeight = 576;
 
 internal i32 g_monitorSize[2];
 internal f32 g_monitorAspect;
