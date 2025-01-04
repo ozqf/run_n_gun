@@ -57,6 +57,6 @@ extern "C" zErrorCode ZE_EngineInit()
 	{
 		return err;
 	}
-	ZRGL_DrawTest();
+	
 	return ZERROR_CODE_NONE;
 }

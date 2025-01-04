@@ -36,9 +36,49 @@ internal f32 g_prim_quadNormals[] =
 	0,  0,  -1
 };
 
-static void Sandbox_Run()
+ze_internal void PrintDataTex(ZRDataTexture data)
+{
+	i32 itemIndex = 0;
+	for (i32 i = 0; i < data.index; i += data.stride)
+	{
+		Vec4 pos = data.pixels[i];
+		Vec4 uvs = data.pixels[i + 1];
+		Vec4 scale = data.pixels[i + 2];
+		printf("%d: pos %.3f, %.3f, %.3f. UVs %.3f, %.3f, %.3f, %.3f. Scale %.3f, %.3f\n",
+			itemIndex, pos.x, pos.y, pos.z,
+			uvs.x, uvs.y, uvs.z, uvs.w,
+			scale.x, scale.y
+		);
+		itemIndex++;
+	}
+}
+
+ze_internal void Sandbox_Run()
 {
     printf("Zealous Engine Sandbox\n");
+	ZRDataTexture data = ZRGL_AllocDataTexture();
+	// write some crap to the data texture.
+	data.WriteItem({-0.1f, 0, 0, 0}, { 0, 0, 1.0, 1.0 }, { 1, 1, 1, 1});
+	data.WriteItem({0.1f, 0, 0, 0}, { 0, 0, 1.0, 1.0 }, { 1, 1, 1, 1});
+	PrintDataTex(data);
+
+	#if 0
+	ZR_DrawTest();
+	#else
+
+	f32 prj[16];
+	f32 screenHeight = 1.0f;
+	M4x4_ToIdentity(prj);
+    M4x4_SetupOrthoProjection(prj, screenHeight, Window_GetAspectRatio());
+
+    f32 view[16];
+	M4x4_ToIdentity(view);
+    view[M4x4_W2] = -1;
+	ZR_DrawQuadBatch(prj, view, &data);
+	#endif
+	ZR_SubmitFrame();
+	
+	printf("Sandbox test complete\n");
     /*
     i32 imgSize = 32;
     i32 numPixels = imgSize * imgSize;

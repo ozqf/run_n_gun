@@ -365,6 +365,39 @@ inline void ZE_Setup3DProjection(
 }
 
 ///////////////////////////////////////////////////////////////////////
+// DATA TYPES
+///////////////////////////////////////////////////////////////////////
+struct Vec4
+{
+	f32 x, y, z, w;
+};
+
+struct ZRQuadItem
+{
+	Vec4 pos;
+	Vec4 uvs;
+	Vec4 colour;
+};
+
+struct ZRDataTexture
+{
+	Vec4* pixels;
+	i32 width;
+	i32 height;
+	i32 stride;
+	i32 index;
+	u32 dataHandle;
+	u32 diffuseHandle;
+
+	void WriteItem(Vec4 pos, Vec4 uvs, Vec4 colour)
+	{
+		pixels[index++] = pos;
+		pixels[index++] = uvs;
+		pixels[index++] = colour;
+	}
+};
+
+///////////////////////////////////////////////////////////////////////
 // FUNCTIONS
 ///////////////////////////////////////////////////////////////////////
 ze_external zErrorCode ZE_EngineInit();
@@ -378,12 +411,17 @@ ze_external void ZE_UploadMesh(
 	f32* normals,
 	u32* vaoHandle,
 	u32* vboHandle);
+ze_external ZRDataTexture ZRGL_AllocDataTexture();
+ze_external void ZR_SubmitFrame();
+ze_external void ZR_DrawTest();
+ze_external void ZR_DrawQuadBatch(f32* projection, f32* view, ZRDataTexture* data);
+
 
 ze_external void* Platform_Alloc(zeSize size);
 ze_external void* Platform_Realloc(void* ptr, zeSize size);
 ze_external void Platform_Free(void* ptr);
 ze_external void Platform_SwapBuffers();
-ze_external void ZRGL_DrawTest();
+
 ze_external f32 Window_GetAspectRatio();
 ze_external f32 Window_GetMonitorRatio();
 

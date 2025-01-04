@@ -3,6 +3,7 @@
 #include <glfw3.h>
 
 #include <bw_charset.h>
+#include <zrgl_batch_draw_shaders.h>
 
 internal f32 g_prim_quadVerts[] =
 {
@@ -121,11 +122,21 @@ internal u32 _quadVBOHandle = 0;
 internal GLuint g_magentaTexId;
 internal GLuint g_charsetTexId;
 
-// program
+internal GLuint g_dataTexId;
+const i32 g_dataTexSize = 256;
+
+// samplers
 internal GLuint g_samplerDefault2d;
+internal GLuint g_samplerData2d;
+
+// programs
 internal GLuint g_vertexDefaultShaderId; 
 internal GLuint g_fragmentDefaultShaderId; 
 internal GLuint g_defaultProgramId;
+
+internal GLuint _quadBatchProgramId;
+internal GLuint _quadBatchVertShaderId;
+internal GLuint _quadBatchFragShaderId;
 
 ///////////////////////////////////////////////////
 // ASSET UPLOAD
@@ -137,7 +148,11 @@ internal GLuint g_defaultProgramId;
 #define ZRGL_DATA_ATTRIB_UVS 1
 #define ZRGL_DATA_ATTRIB_NORMALS 2
 
-ze_external void ZRGL_UploadTexture(u8 *pixels, i32 width, i32 height, u32 *handle, i32 bDataTexture)
+/**
+ * bDataTexture FALSE means u8 pixel channels, u32 per pixel
+ * bDataTexture TRUE means f32 pixel channels, Vec4 per pixel
+ */
+ze_external void ZRGL_UploadTexture(void *pixels, i32 width, i32 height, u32 *handle, i32 bDataTexture)
 {
     if (pixels == NULL)
     {
@@ -154,11 +169,6 @@ ze_external void ZRGL_UploadTexture(u8 *pixels, i32 width, i32 height, u32 *hand
         printf("ERROR UploadTex - height <= 0\n");
         return;
     }
-    // Upload to GPU
-    if (*handle == 0)
-    { 
-        glGenTextures(1, handle);
-    }
 
     u16 pixelDataType = GL_UNSIGNED_BYTE;
     if (bDataTexture)
@@ -166,21 +176,43 @@ ze_external void ZRGL_UploadTexture(u8 *pixels, i32 width, i32 height, u32 *hand
         pixelDataType = GL_FLOAT;
     }
 
-    GLuint texID = *handle;
-    glBindTexture(GL_TEXTURE_2D, texID);
-    // Assuming images are always RGBA here
-    // Make sure conversion of pixel encoding is correct.
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, pixelDataType, pixels);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    // Clear binding
-    glBindTexture(GL_TEXTURE_2D, 0);
-    // if (bVerbose == YES)
-    // { printf("Uploaded %s to tex handle %d\n", path, handle); }
-    printf("Uploaded %d pixels for handle %d\n", width * height, texID);
+    // Upload to GPU
+    if (*handle == 0)
+    {
+        glGenTextures(1, handle);
+		
+    	GLuint texID = *handle;
+		printf("Generated tex %d\n", texID);
+    	glBindTexture(GL_TEXTURE_2D, texID);
+    	// Assuming images are always RGBA here
+    	// Make sure conversion of pixel encoding is correct.
+    	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, pixelDataType, pixels);
+    	if (!bDataTexture)
+		{
+			glGenerateMipmap(GL_TEXTURE_2D);
+		}
+    	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    	// Clear binding
+    	glBindTexture(GL_TEXTURE_2D, 0);
+    	// if (bVerbose == YES)
+    	// { printf("Uploaded %s to tex handle %d\n", path, handle); }
+    	printf("Uploaded %d pixels for handle %d\n", width * height, texID);
+    }
+	else
+	{
+		GLuint texID = *handle;
+		printf("Reuploading tex %d\n", texID);
+    	glBindTexture(GL_TEXTURE_2D, texID);
+    		// quick refresh
+		glTexSubImage2D(
+			GL_TEXTURE_2D, 0, 0, 0,
+			width, height, GL_RGBA, pixelDataType, pixels);
+    	printf("...Reuploaded %d pixels for handle %d\n", width * height, texID);
+	}
+
     //return handle;
 }
 
@@ -321,6 +353,12 @@ ze_external void ZR_SetProgM4x4(GLuint prog, char *uniform, f32 *matrix)
     }
     glUniformMatrix4fv(loc, 1, GL_FALSE, matrix);
     
+}
+
+ze_external void ZR_WriteQuadBatchItem(
+	f32* data)
+{
+
 }
 
 ze_external void ZR_PrepareTextureUnit1D(
@@ -522,7 +560,7 @@ ze_external zErrorCode ZRGL_CreateProgram(
     return ZERROR_CODE_NONE;
 }
 
-ze_external void ZRGL_DrawTest()
+ze_external void ZR_DrawTest()
 {
     printf("ZRGL - draw test...\n");
     f32 prj[16];
@@ -549,8 +587,42 @@ ze_external void ZRGL_DrawTest()
     ZR_PrepareTextureUnit2D(g_defaultProgramId, GL_TEXTURE0, 0, "u_diffuseTex", g_charsetTexId, 0);
     glBindVertexArray(_quadVAOHandle);
     glDrawArrays(GL_TRIANGLES, 0, 6);
-    Platform_SwapBuffers();
     printf("...ZRGL - draw test\n");
+}
+
+ze_external void ZR_DrawQuadBatch(f32* projection, f32* view, ZRDataTexture* data)
+{
+	i32 numItems = data->index / data->stride;
+	printf("Batch draw. Quads %d, Stride %d\n", numItems, data->stride);
+	ZRGL_UploadTexture(data->pixels, data->width, data->height, &data->dataHandle, YES);
+	printf("Batch data uploaded\n");
+	glUseProgram(_quadBatchProgramId);
+
+	ZR_SetProgM4x4(_quadBatchProgramId, "u_projection", projection);
+	ZR_SetProgM4x4(_quadBatchProgramId, "u_view", view);
+	ZR_SetProg1i(_quadBatchProgramId, "u_dataStride", data->stride);
+	ZR_SetProg1i(_quadBatchProgramId, "u_dataTexSize", data->width);
+	ZR_SetProg1i(_quadBatchProgramId, "u_isBillboard", YES);
+    
+	ZR_PrepareTextureUnit2D(_quadBatchProgramId, GL_TEXTURE0, 0, "u_diffuseTex", g_charsetTexId, 0);
+    printf("\tBatch data handle %d\n", data->dataHandle);
+	ZR_PrepareTextureUnit2D(_quadBatchProgramId, GL_TEXTURE2, 2, "u_dataTexture", data->dataHandle, g_samplerData2d);
+    
+    glDrawArraysInstanced(GL_TRIANGLES, 0, 6, numItems);
+	
+}
+
+ze_external void ZR_BeginFrame()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glEnable(GL_DEPTH_TEST);
+    glClearColor(0.5f, 0, 0.5f, 1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+ze_external void ZR_SubmitFrame()
+{
+	Platform_SwapBuffers();
 }
 
 ze_external void ZRGL_AllocTextureU32(i32 imgSize, u8 r, u8 g, u8 b, u8 a, u8** outPixels)
@@ -571,6 +643,22 @@ ze_external void ZRGL_AllocTextureU32(i32 imgSize, u8 r, u8 g, u8 b, u8 a, u8** 
         pixels[i + 3] = a;
     }
 	*outPixels = pixels;
+}
+
+ze_external ZRDataTexture ZRGL_AllocDataTexture()
+{
+	ZRDataTexture tex = {};
+	tex.width = 256;
+	tex.height = 256;
+	i32 numPixels = tex.width * tex.height;
+	i32 numFloats = numPixels * 4;
+	zeSize totalBytes = numFloats * sizeof(f32);
+	tex.pixels = (Vec4*)Platform_Alloc(totalBytes);
+	tex.index = 0;
+	tex.dataHandle = 0;
+	tex.diffuseHandle = 0;
+	tex.stride = 3;
+	return tex;
 }
 
 ze_internal void ZRGL_LoadCharsetTexture()
@@ -609,7 +697,16 @@ ze_external zErrorCode ZRGL_Init()
     }
     ZRGL_UploadTexture(pixels, imgSize, imgSize, &g_magentaTexId);
 	*/
+
+	// regular sampler
     glGenSamplers(1, &g_samplerDefault2d);
+	
+    // Samplers for data textures
+    // Make sure filtering and mip-mapping are disabled!
+    glGenSamplers(1, &g_samplerData2d);
+    glSamplerParameteri(g_samplerData2d, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glSamplerParameteri(g_samplerData2d, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
     ZRGL_CreateProgram(
         draw_single_mesh_vert_text,
         draw_single_mesh_frag_text,
@@ -623,6 +720,22 @@ ze_external zErrorCode ZRGL_Init()
         printf("Error code %d linking default program\n", g_defaultProgramId);
         return ZERROR_CODE_UNSPECIFIED;
     }
+
+	ZRGL_CreateProgram(
+		draw_sprite_batch_3_vert_text,
+		draw_sprite_batch_frag_text,
+		&_quadBatchVertShaderId,
+		&_quadBatchFragShaderId,
+		&_quadBatchProgramId,
+		"quad_batch"
+	);
+	err = ZRGL_LinkProgram(g_defaultProgramId);
+    if (err != ZERROR_CODE_NONE)
+    {
+        printf("Error code %d linking quad batch shader\n", _quadBatchProgramId);
+        return ZERROR_CODE_UNSPECIFIED;
+    }
+
     return ZERROR_CODE_NONE;
 }
 
