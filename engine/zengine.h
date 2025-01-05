@@ -412,10 +412,11 @@ ze_external void ZE_UploadMesh(
 	u32* vaoHandle,
 	u32* vboHandle);
 ze_external ZRDataTexture ZRGL_AllocDataTexture();
-ze_external void ZR_SubmitFrame();
+ze_external void ZR_BeginFrame(f32 clearRed, f32 clearGreen, f32 clearBlue);
 ze_external void ZR_DrawTest();
 ze_external void ZR_DrawQuadBatch(f32* projection, f32* view, ZRDataTexture* data);
-
+ze_external void ZR_SubmitFrame();
+ze_external void ZR_GetAsciiUVs(char ascii, f32* minX, f32* minY, f32* maxX, f32* maxY);
 
 ze_external void* Platform_Alloc(zeSize size);
 ze_external void* Platform_Realloc(void* ptr, zeSize size);

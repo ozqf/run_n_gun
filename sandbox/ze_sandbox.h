@@ -58,8 +58,11 @@ ze_internal void Sandbox_Run()
     printf("Zealous Engine Sandbox\n");
 	ZRDataTexture data = ZRGL_AllocDataTexture();
 	// write some crap to the data texture.
-	data.WriteItem({-0.1f, 0, 0, 0}, { 0, 0, 1.0, 1.0 }, { 1, 1, 1, 1});
-	data.WriteItem({0.1f, 0, 0, 0}, { 0, 0, 1.0, 1.0 }, { 1, 1, 1, 1});
+	f32 minX, minY, maxX, maxY;
+	ZR_GetAsciiUVs('a', &minX, &minY, &maxX, &maxY);
+	data.WriteItem({-2.f, -1.f, 0, 45.f}, { minX, minY, maxX, maxY }, { 1, 1, 1, 1});
+	data.WriteItem({1.5f, 1.5f, 0, -15.f}, { 0, 0, 1.0, 1.0 }, { 1, 1, 1, 1});
+	//data.WriteItem({-2.f, -1.f, 0, 0}, { 0, 0, 1.0, 1.0 }, { 1, 1, 1, 1});
 	PrintDataTex(data);
 
 	#if 0
@@ -74,6 +77,7 @@ ze_internal void Sandbox_Run()
     f32 view[16];
 	M4x4_ToIdentity(view);
     view[M4x4_W2] = -1;
+	ZR_BeginFrame(0.5f, 0.0f, 0.5f);
 	ZR_DrawQuadBatch(prj, view, &data);
 	#endif
 	ZR_SubmitFrame();

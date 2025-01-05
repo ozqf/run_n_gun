@@ -1,9 +1,4 @@
-#include <win_zengine.h>
-#include <glad.h>
-#include <glfw3.h>
-
-#include <bw_charset.h>
-#include <zrgl_batch_draw_shaders.h>
+#include <zrgl.h>
 
 internal f32 g_prim_quadVerts[] =
 {
@@ -590,6 +585,11 @@ ze_external void ZR_DrawTest()
     printf("...ZRGL - draw test\n");
 }
 
+ze_external void ZR_DrawSingleQuad(f32* projection, f32* view, ZRDataTexture* data)
+{
+
+}
+
 ze_external void ZR_DrawQuadBatch(f32* projection, f32* view, ZRDataTexture* data)
 {
 	i32 numItems = data->index / data->stride;
@@ -607,16 +607,17 @@ ze_external void ZR_DrawQuadBatch(f32* projection, f32* view, ZRDataTexture* dat
 	ZR_PrepareTextureUnit2D(_quadBatchProgramId, GL_TEXTURE0, 0, "u_diffuseTex", g_charsetTexId, 0);
     printf("\tBatch data handle %d\n", data->dataHandle);
 	ZR_PrepareTextureUnit2D(_quadBatchProgramId, GL_TEXTURE2, 2, "u_dataTexture", data->dataHandle, g_samplerData2d);
-    
+    printf("Draw arrays\n");
+    glBindVertexArray(_quadVAOHandle);
     glDrawArraysInstanced(GL_TRIANGLES, 0, 6, numItems);
 	
 }
 
-ze_external void ZR_BeginFrame()
+ze_external void ZR_BeginFrame(f32 clearRed, f32 clearGreen, f32 clearBlue)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glEnable(GL_DEPTH_TEST);
-    glClearColor(0.5f, 0, 0.5f, 1);
+    glClearColor(clearRed, clearGreen, clearBlue, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
@@ -671,8 +672,15 @@ ze_internal void ZRGL_LoadCharsetTexture()
 	ZRGL_UploadTexture(pixels, 256, 256, &g_charsetTexId, NO);
 }
 
+
+
 ze_external zErrorCode ZRGL_Init()
 {
+	
+	// During init, enable debug output
+	glEnable              ( GL_DEBUG_OUTPUT );
+	glDebugMessageCallback( MessageCallback, 0 );
+
     ZE_UploadMesh(6, g_prim_quadVerts, g_prim_quadUVs, g_prim_quadNormals, &_quadVAOHandle, &_quadVBOHandle);
 
 	u8* pixels = NULL;
