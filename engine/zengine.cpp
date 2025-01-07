@@ -7,6 +7,7 @@
 #include <stdlib.h>
 
 #include <zengine_internal.h>
+#include <ze_assets.h>
 
 internal i32 g_bConsoleInit = FALSE;
 internal HWND consoleHandle;

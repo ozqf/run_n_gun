@@ -166,8 +166,10 @@ ze_external void ZRGL_UploadTexture(void *pixels, i32 width, i32 height, u32 *ha
     }
 
     u16 pixelDataType = GL_UNSIGNED_BYTE;
+    u16 internalFormat = GL_RGBA;
     if (bDataTexture)
     {
+        internalFormat = GL_RGBA32F;
         pixelDataType = GL_FLOAT;
     }
 
@@ -181,7 +183,7 @@ ze_external void ZRGL_UploadTexture(void *pixels, i32 width, i32 height, u32 *ha
     	glBindTexture(GL_TEXTURE_2D, texID);
     	// Assuming images are always RGBA here
     	// Make sure conversion of pixel encoding is correct.
-    	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, pixelDataType, pixels);
+    	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL_RGBA, pixelDataType, pixels);
     	if (!bDataTexture)
 		{
 			glGenerateMipmap(GL_TEXTURE_2D);
@@ -201,7 +203,7 @@ ze_external void ZRGL_UploadTexture(void *pixels, i32 width, i32 height, u32 *ha
 		GLuint texID = *handle;
 		printf("Reuploading tex %d\n", texID);
     	glBindTexture(GL_TEXTURE_2D, texID);
-    		// quick refresh
+    	// quick refresh
 		glTexSubImage2D(
 			GL_TEXTURE_2D, 0, 0, 0,
 			width, height, GL_RGBA, pixelDataType, pixels);
@@ -477,7 +479,19 @@ ze_internal zErrorCode ZRGL_LinkProgram(GLuint programId)
     }
     return ZERROR_CODE_NONE;
 }
-
+#if 1
+ze_external void Platform_Screenshot(const char *fileName)
+{
+    ZEWindowInfo info = Platform_GetWindowInfo();
+    // 3 bytes for RGB
+    i32 numBytes = info.width * info.height * 3;
+    u8* pixels = (u8*)Platform_Alloc(numBytes);
+    printf("ZR Screenshot - read %d/%d pixels, Allocated %dKB\n", info.width, info.height, (numBytes / 1024));
+    glReadPixels(0, 0, info.width, info.height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+    Platform_SaveImage(fileName, info.width, info.height, pixels);
+    Platform_Free(pixels);
+}
+#endif
 ze_external void ZRGL_PrintShaderCompileLog(GLuint shaderId)
 {
     GLint maxLength = 0;
@@ -571,7 +585,8 @@ ze_external void ZR_DrawTest()
 
 	f32 screenHeight = 0.5f;
 
-	M4x4_SetupOrthoProjection(prj, screenHeight, Window_GetAspectRatio());
+    ZEWindowInfo window = Platform_GetWindowInfo();
+	M4x4_SetupOrthoProjection(prj, screenHeight, window.aspectRatio);
 
     glUseProgram(g_defaultProgramId);
     ZR_SetProgM4x4(g_defaultProgramId, "u_projection", prj);
@@ -593,21 +608,21 @@ ze_external void ZR_DrawSingleQuad(f32* projection, f32* view, ZRDataTexture* da
 ze_external void ZR_DrawQuadBatch(f32* projection, f32* view, ZRDataTexture* data)
 {
 	i32 numItems = data->index / data->stride;
-	printf("Batch draw. Quads %d, Stride %d\n", numItems, data->stride);
+	//printf("Batch draw. Quads %d, Stride %d\n", numItems, data->stride);
 	ZRGL_UploadTexture(data->pixels, data->width, data->height, &data->dataHandle, YES);
-	printf("Batch data uploaded\n");
+	//printf("Batch data uploaded\n");
 	glUseProgram(_quadBatchProgramId);
 
 	ZR_SetProgM4x4(_quadBatchProgramId, "u_projection", projection);
 	ZR_SetProgM4x4(_quadBatchProgramId, "u_view", view);
 	ZR_SetProg1i(_quadBatchProgramId, "u_dataStride", data->stride);
 	ZR_SetProg1i(_quadBatchProgramId, "u_dataTexSize", data->width);
-	ZR_SetProg1i(_quadBatchProgramId, "u_isBillboard", YES);
+	ZR_SetProg1i(_quadBatchProgramId, "u_isBillboard", NO);
     
 	ZR_PrepareTextureUnit2D(_quadBatchProgramId, GL_TEXTURE0, 0, "u_diffuseTex", g_charsetTexId, 0);
-    printf("\tBatch data handle %d\n", data->dataHandle);
+    //printf("\tBatch data handle %d\n", data->dataHandle);
 	ZR_PrepareTextureUnit2D(_quadBatchProgramId, GL_TEXTURE2, 2, "u_dataTexture", data->dataHandle, g_samplerData2d);
-    printf("Draw arrays\n");
+    //printf("Draw arrays\n");
     glBindVertexArray(_quadVAOHandle);
     glDrawArraysInstanced(GL_TRIANGLES, 0, 6, numItems);
 	

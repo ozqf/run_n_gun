@@ -36,6 +36,8 @@ internal f32 g_prim_quadNormals[] =
 	0,  0,  -1
 };
 
+ze_internal ZRDataTexture g_data;
+
 ze_internal void PrintDataTex(ZRDataTexture data)
 {
 	i32 itemIndex = 0;
@@ -52,56 +54,104 @@ ze_internal void PrintDataTex(ZRDataTexture data)
 		itemIndex++;
 	}
 }
-
-ze_internal void Sandbox_Run()
+ze_internal i32 Frame2(f64 delta)
 {
-    printf("Zealous Engine Sandbox\n");
-	ZRDataTexture data = ZRGL_AllocDataTexture();
+	local_persist f64 duration = 0.0;
+	duration += delta;
+	printf("%f\n", duration);
+	if (duration > 2.0)
+	{
+		return NO;
+	}
+	return YES;
+}
+
+ze_internal i32 Frame(f64 delta)
+{
+	local_persist f32 degrees = 0;
+	degrees += 90.f * (f32)delta;
+	printf("Degrees %f\n", degrees);
+	local_persist f64 duration = 0.0;
+	duration += delta;
+	if (duration > 6.0)
+	{
+		return NO;
+	}
 	// write some crap to the data texture.
+	g_data.Clear();
+	f32 radians = degrees * DEG2RAD;
+	f32 x = cosf(radians);
+	f32 y = sinf(radians);
+	g_data.WriteItem({}, { 0, 0, 1.0, 1.0 }, { 1, 1, 1, 1});
 	f32 minX, minY, maxX, maxY;
 	ZR_GetAsciiUVs('a', &minX, &minY, &maxX, &maxY);
-	data.WriteItem({-2.f, -1.f, 0, 45.f}, { minX, minY, maxX, maxY }, { 1, 1, 1, 1});
-	data.WriteItem({1.5f, 1.5f, 0, -15.f}, { 0, 0, 1.0, 1.0 }, { 1, 1, 1, 1});
+	g_data.WriteItem({x, y, 0, radians}, { minX, minY, maxX, maxY }, { 1, 1, 1, 1});
+	minX, minY, maxX, maxY;
+	ZR_GetAsciiUVs('1', &minX, &minY, &maxX, &maxY);
+	g_data.WriteItem({-x, -y, 0, radians}, { minX, minY, maxX, maxY }, { 1, 1, 1, 1});
+	//data.WriteItem({1.5f, 1.5f, 0, -15.f}, { 0, 0, 1.0, 1.0 }, { 1, 1, 1, 1});
 	//data.WriteItem({-2.f, -1.f, 0, 0}, { 0, 0, 1.0, 1.0 }, { 1, 1, 1, 1});
-	PrintDataTex(data);
+	//PrintDataTex(g_data);
 
 	#if 0
 	ZR_DrawTest();
 	#else
-
 	f32 prj[16];
-	f32 screenHeight = 1.0f;
+	f32 screenHeight = 2.0f;
 	M4x4_ToIdentity(prj);
-    M4x4_SetupOrthoProjection(prj, screenHeight, Window_GetAspectRatio());
-
+	ZEWindowInfo window = Platform_GetWindowInfo();
+    M4x4_SetupOrthoProjection(prj, screenHeight, window.aspectRatio);
     f32 view[16];
 	M4x4_ToIdentity(view);
     view[M4x4_W2] = -1;
 	ZR_BeginFrame(0.5f, 0.0f, 0.5f);
-	ZR_DrawQuadBatch(prj, view, &data);
+	ZR_DrawQuadBatch(prj, view, &g_data);
 	#endif
-	ZR_SubmitFrame();
-	
-	printf("Sandbox test complete\n");
-    /*
-    i32 imgSize = 32;
-    i32 numPixels = imgSize * imgSize;
-    u8* pixels = (u8*)Platform_Alloc(numPixels * 4);
-    for (int i = 0; i < numPixels; i += 4)
-    {
-        pixels[i + 0] = 255;
-        pixels[i + 1] = 0;
-        pixels[i + 2] = 255;
-        pixels[i + 3] = 255;
-    }
-    u32 texHandle;
-    ZE_UploadTexture(pixels, imgSize, imgSize, &texHandle);
-    u32 vaoHandle = 0;
-    u32 vboHandle = 0;
 
-    ZE_UploadMesh(6, g_prim_quadVerts, g_prim_quadUVs, g_prim_quadNormals, &vaoHandle, &vboHandle);
-    //ZE_UploadTexture()
-	*/
+	ZR_SubmitFrame();
+	return YES;
+}
+
+ze_internal void FrameLoop()
+{
+	bool g_running = YES;
+	i32 g_targetFPS = 60;
+	f64 g_targetDelta = 1.f / (f32)g_targetFPS;
+	
+	f64 lastTickTime = Platform_QueryClock();
+	//i32 iterations = 0;
+	while (g_running)
+	{
+		//iterations++;
+		//if (iterations > 10000)
+		//{
+		//	g_running = false;
+		//}
+
+		f64 now = Platform_QueryClock();
+		f64 delta = now - lastTickTime;
+		// 	delta, now, lastTickTime);
+		if (delta < g_targetDelta)
+		{
+			// if we have loads of time until the next frame, sleep
+			if (g_targetDelta / delta > 2)
+			{
+				Platform_Sleep(1);
+			}
+			continue;
+		}
+		lastTickTime = now;
+		// do
+		g_running = Frame(delta);
+	}
+}
+
+ze_internal void Sandbox_Run()
+{
+    printf("Zealous Engine Sandbox\n");
+	g_data = ZRGL_AllocDataTexture();
+	FrameLoop();
+	printf("Sandbox test complete\n");
 }
 
 #endif // ZE_SANDBOX_H

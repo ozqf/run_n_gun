@@ -47,7 +47,5 @@ extern "C" int CALLBACK WinMain(
 		return 0;
 	}
     Sandbox_Run();
-	printf("Waiting 2 seconds\n");
-	Sleep(4000);
 	return 0;
 }

@@ -3,6 +3,7 @@
 
 #include <stdint.h>	// for types
 #include <stdio.h>	// for printf
+#include <math.h>
 #include <string.h>	// for memcpy
 
 ///////////////////////////////////////////////////////////////////////
@@ -395,6 +396,20 @@ struct ZRDataTexture
 		pixels[index++] = uvs;
 		pixels[index++] = colour;
 	}
+
+	void Clear()
+	{
+		index = 0;
+	}
+};
+
+struct ZEWindowInfo
+{
+	i32 width, height;
+	f32 aspectRatio;
+	
+	i32 scrWidth, scrHeight;
+	f32 scrAspectRatio;
 };
 
 ///////////////////////////////////////////////////////////////////////
@@ -411,19 +426,25 @@ ze_external void ZE_UploadMesh(
 	f32* normals,
 	u32* vaoHandle,
 	u32* vboHandle);
-ze_external ZRDataTexture ZRGL_AllocDataTexture();
-ze_external void ZR_BeginFrame(f32 clearRed, f32 clearGreen, f32 clearBlue);
-ze_external void ZR_DrawTest();
-ze_external void ZR_DrawQuadBatch(f32* projection, f32* view, ZRDataTexture* data);
-ze_external void ZR_SubmitFrame();
-ze_external void ZR_GetAsciiUVs(char ascii, f32* minX, f32* minY, f32* maxX, f32* maxY);
+ze_external ZRDataTexture	ZRGL_AllocDataTexture();
+ze_external void 			ZR_BeginFrame(f32 clearRed, f32 clearGreen, f32 clearBlue);
+ze_external void 			ZR_DrawTest();
+ze_external void 			ZR_DrawQuadBatch(f32* projection, f32* view, ZRDataTexture* data);
+ze_external void 			ZR_SubmitFrame();
+ze_external void 			ZR_GetAsciiUVs(char ascii, f32* minX, f32* minY, f32* maxX, f32* maxY);
 
-ze_external void* Platform_Alloc(zeSize size);
-ze_external void* Platform_Realloc(void* ptr, zeSize size);
-ze_external void Platform_Free(void* ptr);
-ze_external void Platform_SwapBuffers();
+ze_external void			Platform_SetCursorLock(i32 bLocked);
+ze_external void			Platform_Sleep(i32 milliseconds);
+ze_external f64				Platform_QueryClock();
 
-ze_external f32 Window_GetAspectRatio();
-ze_external f32 Window_GetMonitorRatio();
+ze_external void* 			Platform_Alloc(zeSize size);
+ze_external void* 			Platform_Realloc(void* ptr, zeSize size);
+ze_external void 			Platform_Free(void* ptr);
+ze_external void 			Platform_SwapBuffers();
+ze_external ZEWindowInfo	Platform_GetWindowInfo();
+
+ze_external void			Platform_Screenshot(const char* filePath);
+ze_external void 			Platform_SaveImage(
+	const char *fileName, i32 width, i32 height, const void *rgbPixels);
 
 #endif // ZENGINE_H

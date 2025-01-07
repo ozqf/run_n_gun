@@ -23,6 +23,13 @@ internal f32 g_monitorAspect;
 internal i32 g_windowSize[2];
 internal f32 g_windowAspect;
 
+// performance counts per second
+// Read Quad Part for a complete 64 bit integer
+static LARGE_INTEGER g_timerFrequency;
+// used to calculate time since application startup.
+// NEVER change once set!
+static i64 g_clockBase;
+
 // TODO: App thread can cause a 'GLFW is not initialised' error here
 // by call into main thread during shutdown. Make sure App has closed before
 // closing GLFW
@@ -32,7 +39,7 @@ static void glfw_error_callback(int error, const char *description)
 	//Platform_Fatal(description);
 }
 
-extern "C" void Window_SetCursorLock(i32 bLocked)
+extern "C" void Platform_SetCursorLock(i32 bLocked)
 {
     g_bCursorLocked = bLocked;
     if (g_window == NULL)
@@ -51,14 +58,17 @@ extern "C" void Window_SetCursorLock(i32 bLocked)
     }
 }
 
-extern "C" f32 Window_GetMonitorRatio()
+ze_external ZEWindowInfo Platform_GetWindowInfo()
 {
-	return g_monitorAspect;
-}
-
-extern "C" f32 Window_GetAspectRatio()
-{
-	return g_windowAspect;
+    ZEWindowInfo info;
+    info.width = g_windowSize[0];
+    info.height = g_windowSize[1];
+    info.aspectRatio = g_windowAspect;
+    
+    info.scrWidth = g_monitorSize[0];
+    info.scrHeight = g_monitorSize[1];
+    info.scrAspectRatio = g_monitorAspect;
+    return info;
 }
 
 /*
@@ -80,6 +90,36 @@ internal zErrorCode InitRenderer()
 }
 */
 
+////////////////////////////////////////////////////////
+// Timing
+////////////////////////////////////////////////////////
+internal void Win_InitTimer()
+{
+	// Counts per second of performance frequency
+	// eg 2742188
+	QueryPerformanceFrequency(&g_timerFrequency);
+	printf("Precision timer freq %lld\n", g_timerFrequency.QuadPart);
+	LARGE_INTEGER counter;
+	QueryPerformanceCounter(&counter);
+	g_clockBase = counter.QuadPart;
+}
+
+ze_external f64 Platform_QueryClock()
+{
+	LARGE_INTEGER counter;
+	QueryPerformanceCounter(&counter);
+	i64 ticksSinceStart = counter.QuadPart - g_clockBase;
+	f64 secondsSinceStart =
+		(f64)((f64)ticksSinceStart / (f64)g_timerFrequency.QuadPart);
+	//printf("%f seconds since startup\n", secondsSinceStart);
+	return secondsSinceStart;
+}
+
+ze_external void Platform_Sleep(i32 milliseconds)
+{
+	Sleep(milliseconds);
+}
+
 extern "C" void Platform_SwapBuffers()
 {    
     glfwSwapBuffers(g_window);
@@ -87,6 +127,7 @@ extern "C" void Platform_SwapBuffers()
 
 extern "C" zErrorCode Platform_CreateWindow()
 {
+    Win_InitTimer();
     printf("Spawn window\n");
     glfwSetErrorCallback(glfw_error_callback);
 

@@ -9,6 +9,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <zengine.h>
+#include <zengine_internal.h>
 
 #endif // WIN_ZENGINE_H
