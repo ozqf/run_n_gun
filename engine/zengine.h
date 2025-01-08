@@ -61,6 +61,87 @@ static_assert(sizeof(f64) == 8, "Code requires f64 size == 8");
 #define ZERROR_CODE_BAD_PARAMETER 2
 #define ZERROR_CODE_NO_CAPACITY 3
 
+//////////////////////////////////////////////////////////////////////
+// Input codes
+//////////////////////////////////////////////////////////////////////
+#define Z_INPUT_CODE_NULL 0
+#define Z_INPUT_CODE_MOUSE_1 1
+#define Z_INPUT_CODE_MOUSE_2 2
+#define Z_INPUT_CODE_MOUSE_3 3
+#define Z_INPUT_CODE_MOUSE_4 4
+#define Z_INPUT_CODE_MOUSE_5 5
+#define Z_INPUT_CODE_MWHEELUP 6
+#define Z_INPUT_CODE_MWHEELDOWN 7
+#define Z_INPUT_CODE_A 8
+#define Z_INPUT_CODE_B 9
+#define Z_INPUT_CODE_C 10
+#define Z_INPUT_CODE_D 11
+#define Z_INPUT_CODE_E 12
+#define Z_INPUT_CODE_F 13
+#define Z_INPUT_CODE_G 14
+#define Z_INPUT_CODE_H 15
+#define Z_INPUT_CODE_I 16
+#define Z_INPUT_CODE_J 17
+#define Z_INPUT_CODE_K 18
+#define Z_INPUT_CODE_L 19
+#define Z_INPUT_CODE_M 20
+#define Z_INPUT_CODE_N 21
+#define Z_INPUT_CODE_O 22
+#define Z_INPUT_CODE_P 23
+#define Z_INPUT_CODE_Q 24
+#define Z_INPUT_CODE_R 25
+#define Z_INPUT_CODE_S 26
+#define Z_INPUT_CODE_T 27
+#define Z_INPUT_CODE_U 28
+#define Z_INPUT_CODE_V 29
+#define Z_INPUT_CODE_W 30
+#define Z_INPUT_CODE_X 31
+#define Z_INPUT_CODE_Y 32
+#define Z_INPUT_CODE_Z 33
+#define Z_INPUT_CODE_SPACE 34
+#define Z_INPUT_CODE_LEFT_SHIFT 35
+#define Z_INPUT_CODE_RIGHT_SHIFT 36
+#define Z_INPUT_CODE_LEFT_CONTROL 37
+#define Z_INPUT_CODE_RIGHT_CONTROL 38
+#define Z_INPUT_CODE_ESCAPE 39
+#define Z_INPUT_CODE_RETURN 40
+#define Z_INPUT_CODE_ENTER 41
+#define Z_INPUT_CODE_0 42
+#define Z_INPUT_CODE_1 43
+#define Z_INPUT_CODE_2 44
+#define Z_INPUT_CODE_3 45
+#define Z_INPUT_CODE_4 46
+#define Z_INPUT_CODE_5 47
+#define Z_INPUT_CODE_6 48
+#define Z_INPUT_CODE_7 49
+#define Z_INPUT_CODE_8 50
+#define Z_INPUT_CODE_9 51
+#define Z_INPUT_CODE_UP 52
+#define Z_INPUT_CODE_DOWN 53
+#define Z_INPUT_CODE_LEFT 54
+#define Z_INPUT_CODE_RIGHT 55
+#define Z_INPUT_CODE_MOUSE_POS_X 56
+#define Z_INPUT_CODE_MOUSE_POS_Y 57
+#define Z_INPUT_CODE_MOUSE_MOVE_X 58
+#define Z_INPUT_CODE_MOUSE_MOVE_Y 59
+#define Z_INPUT_CODE_F1 60
+#define Z_INPUT_CODE_F2 61
+#define Z_INPUT_CODE_F3 62
+#define Z_INPUT_CODE_F4 63
+#define Z_INPUT_CODE_F5 64
+#define Z_INPUT_CODE_F6 65
+#define Z_INPUT_CODE_F7 66
+#define Z_INPUT_CODE_F8 67
+#define Z_INPUT_CODE_F9 68
+#define Z_INPUT_CODE_F10 69
+#define Z_INPUT_CODE_F11 70
+#define Z_INPUT_CODE_F12 71
+#define Z_INPUT_CODE_BACKSLASH 72
+#define Z_INPUT_CODE_FORWARDSLASH 73
+#define Z_INPUT_CODE_DELETE 74
+
+#define Z_INPUT_CODE__LAST__ 74
+
 ///////////////////////////////////////////////////////////////////////
 // PRIMITIVE FUNCTIONS
 ///////////////////////////////////////////////////////////////////////
@@ -412,26 +493,27 @@ struct ZEWindowInfo
 	f32 scrAspectRatio;
 };
 
+#define APP_FLAG_OVERRIDE_ESCAPE_KEY (1 << 0)
+
+struct ZEFrame
+{
+	f32 delta;
+};
+
+typedef void (ZE_FrameCallback)(ZEFrame frame);
+typedef void (ZE_KeyCallback)(i32 key, i32 value, i32 mods);
+
+struct ZEApp
+{
+	char* windowName;
+	i32 flags;
+	ZE_FrameCallback* frameCallback;
+	ZE_KeyCallback* keyCallback;
+};
+
 ///////////////////////////////////////////////////////////////////////
 // FUNCTIONS
 ///////////////////////////////////////////////////////////////////////
-ze_external zErrorCode ZE_EngineInit();
-
-ze_external void ZE_UploadTexture(
-	u8 *pixels, i32 width, i32 height, u32 *handle, i32 bDataTexture = NO);
-ze_external void ZE_UploadMesh(
-	i32 numVerts,
-	f32* verts,
-	f32* uvs,
-	f32* normals,
-	u32* vaoHandle,
-	u32* vboHandle);
-ze_external ZRDataTexture	ZRGL_AllocDataTexture();
-ze_external void 			ZR_BeginFrame(f32 clearRed, f32 clearGreen, f32 clearBlue);
-ze_external void 			ZR_DrawTest();
-ze_external void 			ZR_DrawQuadBatch(f32* projection, f32* view, ZRDataTexture* data);
-ze_external void 			ZR_SubmitFrame();
-ze_external void 			ZR_GetAsciiUVs(char ascii, f32* minX, f32* minY, f32* maxX, f32* maxY);
 
 ze_external void			Platform_SetCursorLock(i32 bLocked);
 ze_external void			Platform_Sleep(i32 milliseconds);
@@ -446,5 +528,18 @@ ze_external ZEWindowInfo	Platform_GetWindowInfo();
 ze_external void			Platform_Screenshot(const char* filePath);
 ze_external void 			Platform_SaveImage(
 	const char *fileName, i32 width, i32 height, const void *rgbPixels);
+
+ze_external zErrorCode		ZE_EngineStart(ZEApp app);
+ze_external zErrorCode		ZERunLoop(i32 targetFrameRate, ZE_FrameCallback frameCallback);
+ze_external void			Platform_Shutdown();
+
+ze_external void 			ZE_UploadTexture(u8 *pixels, i32 width, i32 height, u32 *handle, i32 bDataTexture = NO);
+ze_external void			ZE_UploadMesh(i32 numVerts, f32* verts, f32* uvs, f32* normals, u32* vaoHandle, u32* vboHandle);
+ze_external ZRDataTexture	ZR_AllocDataTexture();
+ze_external void 			ZR_BeginFrame(f32 clearRed, f32 clearGreen, f32 clearBlue);
+ze_external void 			ZR_DrawTest();
+ze_external void 			ZR_DrawQuadBatch(f32* projection, f32* view, ZRDataTexture* data);
+ze_external void 			ZR_SubmitFrame();
+ze_external void 			ZR_GetAsciiUVs(char ascii, f32* minX, f32* minY, f32* maxX, f32* maxY);
 
 #endif // ZENGINE_H

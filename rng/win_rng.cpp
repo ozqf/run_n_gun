@@ -10,7 +10,7 @@ extern "C" int CALLBACK WinMain(
     LPSTR lpCmdLine,
     int nCmdShow)
 {
-	ZE_EngineInit();
+	ZE_EngineStart();
     rng_run();
 	Sleep(2000);
 	return 0;

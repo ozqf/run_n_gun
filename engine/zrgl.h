@@ -7,6 +7,5 @@
 
 #include <bw_charset.h>
 #include <zrgl_batch_draw_shaders.h>
-#include <zrgl_util.h>
 
 #endif // ZRGL_H

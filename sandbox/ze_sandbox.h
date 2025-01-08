@@ -70,13 +70,13 @@ ze_internal i32 Frame(f64 delta)
 {
 	local_persist f32 degrees = 0;
 	degrees += 90.f * (f32)delta;
-	printf("Degrees %f\n", degrees);
-	local_persist f64 duration = 0.0;
-	duration += delta;
-	if (duration > 6.0)
-	{
-		return NO;
-	}
+	//printf("Degrees %f\n", degrees);
+	//local_persist f64 duration = 0.0;
+	//duration += delta;
+	//if (duration > 6.0)
+	//{
+	//	return NO;
+	//}
 	// write some crap to the data texture.
 	g_data.Clear();
 	f32 radians = degrees * DEG2RAD;
@@ -146,11 +146,35 @@ ze_internal void FrameLoop()
 	}
 }
 
+ze_internal void FrameTick(ZEFrame frame)
+{
+	Frame(frame.delta);
+}
+
+ze_internal void KeyCallback(i32 key, i32 value, i32 mods)
+{
+	printf("App saw engine key %d, action %d, mods %d\n", key, value, mods);
+}
+
 ze_internal void Sandbox_Run()
 {
+	ZEApp app = {};
+	app.windowName = "Zealous Engine Sandbox";
+	app.frameCallback = FrameTick;
+	app.keyCallback = KeyCallback;
+
+	zErrorCode err =  ZE_EngineStart(app);
+	if (err != ZERROR_CODE_NONE)
+	{
+		printf("Engine startup failed with code %d\n", err);
+		Sleep(2000);
+		return;
+	}
+    
     printf("Zealous Engine Sandbox\n");
-	g_data = ZRGL_AllocDataTexture();
-	FrameLoop();
+	g_data = ZR_AllocDataTexture();
+	ZERunLoop(60, FrameTick);
+	//FrameLoop();
 	printf("Sandbox test complete\n");
 }
 

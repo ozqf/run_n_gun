@@ -9,8 +9,14 @@
 #include <zengine_internal.h>
 #include <ze_assets.h>
 
-internal i32 g_bConsoleInit = FALSE;
-internal HWND consoleHandle;
+ze_internal i32 g_bConsoleInit = FALSE;
+ze_internal HWND consoleHandle;
+ze_internal bool g_running = YES;
+ze_internal ZEApp g_app = {};
+
+ze_external i32 ZEGetAppFlags() { return g_app.flags; }
+
+ze_external ZEApp ZEGetApp() { return g_app; }
 
 ze_external void *Platform_Alloc(zeSize size)
 {
@@ -27,10 +33,47 @@ ze_external void Platform_Free(void *ptr)
 	free(ptr);
 }
 
+ze_external void Platform_Shutdown()
+{
+	printf("Shutdown triggered\n");
+	g_running = NO;
+}
+
+ze_external zErrorCode ZERunLoop(i32 targetFrameRate, ZE_FrameCallback callback)
+{
+	i32 g_targetFPS = 60;
+	f64 g_targetDelta = 1.f / (f32)g_targetFPS;
+	
+	f64 lastTickTime = Platform_QueryClock();
+	while (g_running)
+	{
+		f64 now = Platform_QueryClock();
+		f64 delta = now - lastTickTime;
+		// 	delta, now, lastTickTime);
+		if (delta < g_targetDelta)
+		{
+			// if we have loads of time until the next frame, sleep
+			if (g_targetDelta / delta > 2)
+			{
+				Platform_Sleep(1);
+			}
+			continue;
+		}
+		lastTickTime = now;
+		// do
+		Platform_PollEvents();
+		ZEFrame frame = {};
+		frame.delta = (f32)delta;
+		callback(frame);
+	}
+	printf("Shutting down\n");
+	return ZERROR_CODE_NONE;
+}
+
 ////////////////////////////////////////////////////////
 // initialisation
 ////////////////////////////////////////////////////////
-static void Platform_InitConsole()
+ze_internal void Platform_InitConsole()
 {
 	if (g_bConsoleInit)
 	{
@@ -48,11 +91,12 @@ static void Platform_InitConsole()
 	printf("[%s] Console initialized.\n", __FILE__);
 }
 
-extern "C" zErrorCode ZE_EngineInit()
+ze_external zErrorCode ZE_EngineStart(ZEApp app)
 {
 	zErrorCode err = ZERROR_CODE_NONE;
+	g_app = app;
 	Platform_InitConsole();
-	Platform_CreateWindow();
+	Platform_CreateWindow(app.windowName);
 	err = ZRGL_Init();
 	if (err != ZERROR_CODE_NONE)
 	{

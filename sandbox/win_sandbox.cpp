@@ -39,13 +39,6 @@ extern "C" int CALLBACK WinMain(
     LPSTR lpCmdLine,
     int nCmdShow)
 {
-	zErrorCode err =  ZE_EngineInit();
-	if (err != ZERROR_CODE_NONE)
-	{
-		printf("Engine startup failed with code %d\n", err);
-		Sleep(2000);
-		return 0;
-	}
-    Sandbox_Run();
+	Sandbox_Run();
 	return 0;
 }

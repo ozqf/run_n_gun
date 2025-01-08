@@ -134,156 +134,6 @@ internal GLuint _quadBatchVertShaderId;
 internal GLuint _quadBatchFragShaderId;
 
 ///////////////////////////////////////////////////
-// ASSET UPLOAD
-///////////////////////////////////////////////////
-
-#define MAX_BATCH_SIZE 100
-
-#define ZRGL_DATA_ATTRIB_VERTICES 0
-#define ZRGL_DATA_ATTRIB_UVS 1
-#define ZRGL_DATA_ATTRIB_NORMALS 2
-
-/**
- * bDataTexture FALSE means u8 pixel channels, u32 per pixel
- * bDataTexture TRUE means f32 pixel channels, Vec4 per pixel
- */
-ze_external void ZRGL_UploadTexture(void *pixels, i32 width, i32 height, u32 *handle, i32 bDataTexture)
-{
-    if (pixels == NULL)
-    {
-        printf("ERROR UploadTex - pixels are null\n");
-        return;
-    }
-    if (width <= 0)
-    {
-        printf("ERROR UploadTex - width <= 0\n");
-        return;
-    }
-    if (height <= 0)
-    {
-        printf("ERROR UploadTex - height <= 0\n");
-        return;
-    }
-
-    u16 pixelDataType = GL_UNSIGNED_BYTE;
-    u16 internalFormat = GL_RGBA;
-    if (bDataTexture)
-    {
-        internalFormat = GL_RGBA32F;
-        pixelDataType = GL_FLOAT;
-    }
-
-    // Upload to GPU
-    if (*handle == 0)
-    {
-        glGenTextures(1, handle);
-		
-    	GLuint texID = *handle;
-		printf("Generated tex %d\n", texID);
-    	glBindTexture(GL_TEXTURE_2D, texID);
-    	// Assuming images are always RGBA here
-    	// Make sure conversion of pixel encoding is correct.
-    	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL_RGBA, pixelDataType, pixels);
-    	if (!bDataTexture)
-		{
-			glGenerateMipmap(GL_TEXTURE_2D);
-		}
-    	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    	// Clear binding
-    	glBindTexture(GL_TEXTURE_2D, 0);
-    	// if (bVerbose == YES)
-    	// { printf("Uploaded %s to tex handle %d\n", path, handle); }
-    	printf("Uploaded %d pixels for handle %d\n", width * height, texID);
-    }
-	else
-	{
-		GLuint texID = *handle;
-		printf("Reuploading tex %d\n", texID);
-    	glBindTexture(GL_TEXTURE_2D, texID);
-    	// quick refresh
-		glTexSubImage2D(
-			GL_TEXTURE_2D, 0, 0, 0,
-			width, height, GL_RGBA, pixelDataType, pixels);
-    	printf("...Reuploaded %d pixels for handle %d\n", width * height, texID);
-	}
-
-    //return handle;
-}
-
-ze_external void ZE_UploadMesh(i32 numVerts, f32* verts, f32* uvs, f32* normals, u32* vaoHandle, u32* vboHandle)
-{
-    // if handles already exist we're just updating
-    if (*vaoHandle == 0)
-    {
-        // generate handles
-        glGenVertexArrays(1, vaoHandle);
-        glGenBuffers(1, vboHandle);
-    }
-
-    glBindVertexArray(*vaoHandle);
-    glBindBuffer(GL_ARRAY_BUFFER, *vboHandle);
-
-    
-    i32 vec3Size = sizeof(f32) * 3;
-    i32 vec2Size = sizeof(f32) * 2;
-    i32 m4x4Size = sizeof(f32) * 16;
-    
-    //////////////////////////////////////////
-    // Calculate size
-    i32 numVertBytes = numVerts * vec3Size;
-    i32 numUVBytes = vec2Size * numVerts;
-    i32 numNormalBytes = numVertBytes;
-    i32 staticBytes = numVertBytes + numUVBytes + numNormalBytes;
-
-    // Add space for up to 100 model view matrices:
-    i32 maxInstances = MAX_BATCH_SIZE;
-    i32 instanceDataBytes = maxInstances * m4x4Size;
-
-    i32 totalBytes = staticBytes + instanceDataBytes;
-    
-    /////////////////////////////////////////
-    // upload sub-buffers and configure pointers
-
-    i32 vertDataAttrib = ZRGL_DATA_ATTRIB_VERTICES;
-    i32 uvDataAttrib = ZRGL_DATA_ATTRIB_UVS;
-    i32 normalDataAttrib = ZRGL_DATA_ATTRIB_NORMALS;
-
-    GLenum vboUsage = GL_DYNAMIC_DRAW;
-    
-    // Allocate buffer for all three arrays verts-normals-uvs
-    // send null ptr for data, we're not uploading yet
-    glBufferData(GL_ARRAY_BUFFER, totalBytes, NULL, vboUsage);
-    // Upload sub-buffers
-    zeSize vertOffset = 0;
-    zeSize uvOffset = numVertBytes;
-    zeSize normalOffset = numVertBytes + numUVBytes;
-
-    // BUFFER: - All Verts | All Normals | All Uvs -
-    glBufferSubData(GL_ARRAY_BUFFER, vertOffset, numVertBytes, verts);
-    glBufferSubData(GL_ARRAY_BUFFER, normalOffset, numNormalBytes, normals);
-    glBufferSubData(GL_ARRAY_BUFFER, uvOffset, numUVBytes, uvs);
-
-    // enable use of static data
-    glEnableVertexAttribArray(vertDataAttrib);
-    glEnableVertexAttribArray(uvDataAttrib);
-    glEnableVertexAttribArray(normalDataAttrib);
-    GLenum glDataType = GL_FLOAT;
-    // setup how to read the static data sections
-    glVertexAttribPointer(vertDataAttrib, 3, glDataType, GL_FALSE, 0, 0);
-    glVertexAttribPointer(uvDataAttrib, 2, glDataType, GL_FALSE, 0, (void *)uvOffset);
-    glVertexAttribPointer(normalDataAttrib, 3, glDataType, GL_FALSE, 0, (void *)normalOffset);
-    
-    // clear binding
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    
-    printf("Uploaded %d verts for vao %d, vbo %d\n", numVerts, *vaoHandle, *vboHandle);
-}
-
-///////////////////////////////////////////////////
 // SHADER PARAMETERS
 ///////////////////////////////////////////////////
 
@@ -569,6 +419,182 @@ ze_external zErrorCode ZRGL_CreateProgram(
     return ZERROR_CODE_NONE;
 }
 
+///////////////////////////////////////////////////
+// ASSET UPLOAD
+///////////////////////////////////////////////////
+
+#define MAX_BATCH_SIZE 100
+
+#define ZRGL_DATA_ATTRIB_VERTICES 0
+#define ZRGL_DATA_ATTRIB_UVS 1
+#define ZRGL_DATA_ATTRIB_NORMALS 2
+
+void GLAPIENTRY MessageCallback( GLenum source,
+				 GLenum type,
+				 GLuint id,
+				 GLenum severity,
+				 GLsizei length,
+				 const GLchar* message,
+				 const void* userParam )
+{
+  fprintf( stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+		   ( type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : "" ),
+			type, severity, message );
+}
+
+ze_external void ZR_GetAsciiUVs(char ascii, f32* minX, f32* minY, f32* maxX, f32* maxY)
+{
+	const i32 asciiSheetWidth = 16;
+	const f32 quadWidth = 1.0f / (f32)asciiSheetWidth;
+	u8 c = (u8)ascii;
+	i32 x = c % asciiSheetWidth;
+	i32 y = c / asciiSheetWidth;
+	*minX = x * quadWidth;
+	*minY = 1.f - (y * quadWidth);
+	*maxX = *minX + quadWidth;
+	*maxY = (*minY + quadWidth);
+}
+
+/**
+ * bDataTexture FALSE means u8 pixel channels, u32 per pixel
+ * bDataTexture TRUE means f32 pixel channels, Vec4 per pixel
+ */
+ze_external void ZRGL_UploadTexture(void *pixels, i32 width, i32 height, u32 *handle, i32 bDataTexture)
+{
+    if (pixels == NULL)
+    {
+        printf("ERROR UploadTex - pixels are null\n");
+        return;
+    }
+    if (width <= 0)
+    {
+        printf("ERROR UploadTex - width <= 0\n");
+        return;
+    }
+    if (height <= 0)
+    {
+        printf("ERROR UploadTex - height <= 0\n");
+        return;
+    }
+
+    u16 pixelDataType = GL_UNSIGNED_BYTE;
+    u16 internalFormat = GL_RGBA;
+    if (bDataTexture)
+    {
+        internalFormat = GL_RGBA32F;
+        pixelDataType = GL_FLOAT;
+    }
+
+    // Upload to GPU
+    if (*handle == 0)
+    {
+        glGenTextures(1, handle);
+		
+    	GLuint texID = *handle;
+		printf("Generated tex %d\n", texID);
+    	glBindTexture(GL_TEXTURE_2D, texID);
+    	// Assuming images are always RGBA here
+    	// Make sure conversion of pixel encoding is correct.
+    	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL_RGBA, pixelDataType, pixels);
+    	if (!bDataTexture)
+		{
+			glGenerateMipmap(GL_TEXTURE_2D);
+		}
+    	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    	// Clear binding
+    	glBindTexture(GL_TEXTURE_2D, 0);
+    	// if (bVerbose == YES)
+    	// { printf("Uploaded %s to tex handle %d\n", path, handle); }
+    	printf("Uploaded %d pixels for handle %d\n", width * height, texID);
+    }
+	else
+	{
+		GLuint texID = *handle;
+		//printf("Reuploading tex %d\n", texID);
+    	glBindTexture(GL_TEXTURE_2D, texID);
+    	// quick refresh
+		glTexSubImage2D(
+			GL_TEXTURE_2D, 0, 0, 0,
+			width, height, GL_RGBA, pixelDataType, pixels);
+    	//printf("...Reuploaded %d pixels for handle %d\n", width * height, texID);
+	}
+
+    //return handle;
+}
+
+ze_external void ZE_UploadMesh(i32 numVerts, f32* verts, f32* uvs, f32* normals, u32* vaoHandle, u32* vboHandle)
+{
+    // if handles already exist we're just updating
+    if (*vaoHandle == 0)
+    {
+        // generate handles
+        glGenVertexArrays(1, vaoHandle);
+        glGenBuffers(1, vboHandle);
+    }
+
+    glBindVertexArray(*vaoHandle);
+    glBindBuffer(GL_ARRAY_BUFFER, *vboHandle);
+
+    
+    i32 vec3Size = sizeof(f32) * 3;
+    i32 vec2Size = sizeof(f32) * 2;
+    i32 m4x4Size = sizeof(f32) * 16;
+    
+    //////////////////////////////////////////
+    // Calculate size
+    i32 numVertBytes = numVerts * vec3Size;
+    i32 numUVBytes = vec2Size * numVerts;
+    i32 numNormalBytes = numVertBytes;
+    i32 staticBytes = numVertBytes + numUVBytes + numNormalBytes;
+
+    // Add space for up to 100 model view matrices:
+    i32 maxInstances = MAX_BATCH_SIZE;
+    i32 instanceDataBytes = maxInstances * m4x4Size;
+
+    i32 totalBytes = staticBytes + instanceDataBytes;
+    
+    /////////////////////////////////////////
+    // upload sub-buffers and configure pointers
+
+    i32 vertDataAttrib = ZRGL_DATA_ATTRIB_VERTICES;
+    i32 uvDataAttrib = ZRGL_DATA_ATTRIB_UVS;
+    i32 normalDataAttrib = ZRGL_DATA_ATTRIB_NORMALS;
+
+    GLenum vboUsage = GL_DYNAMIC_DRAW;
+    
+    // Allocate buffer for all three arrays verts-normals-uvs
+    // send null ptr for data, we're not uploading yet
+    glBufferData(GL_ARRAY_BUFFER, totalBytes, NULL, vboUsage);
+    // Upload sub-buffers
+    zeSize vertOffset = 0;
+    zeSize uvOffset = numVertBytes;
+    zeSize normalOffset = numVertBytes + numUVBytes;
+
+    // BUFFER: - All Verts | All Normals | All Uvs -
+    glBufferSubData(GL_ARRAY_BUFFER, vertOffset, numVertBytes, verts);
+    glBufferSubData(GL_ARRAY_BUFFER, normalOffset, numNormalBytes, normals);
+    glBufferSubData(GL_ARRAY_BUFFER, uvOffset, numUVBytes, uvs);
+
+    // enable use of static data
+    glEnableVertexAttribArray(vertDataAttrib);
+    glEnableVertexAttribArray(uvDataAttrib);
+    glEnableVertexAttribArray(normalDataAttrib);
+    GLenum glDataType = GL_FLOAT;
+    // setup how to read the static data sections
+    glVertexAttribPointer(vertDataAttrib, 3, glDataType, GL_FALSE, 0, 0);
+    glVertexAttribPointer(uvDataAttrib, 2, glDataType, GL_FALSE, 0, (void *)uvOffset);
+    glVertexAttribPointer(normalDataAttrib, 3, glDataType, GL_FALSE, 0, (void *)normalOffset);
+    
+    // clear binding
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    
+    printf("Uploaded %d verts for vao %d, vbo %d\n", numVerts, *vaoHandle, *vboHandle);
+}
+
 ze_external void ZR_DrawTest()
 {
     printf("ZRGL - draw test...\n");
@@ -661,7 +687,7 @@ ze_external void ZRGL_AllocTextureU32(i32 imgSize, u8 r, u8 g, u8 b, u8 a, u8** 
 	*outPixels = pixels;
 }
 
-ze_external ZRDataTexture ZRGL_AllocDataTexture()
+ze_external ZRDataTexture ZR_AllocDataTexture()
 {
 	ZRDataTexture tex = {};
 	tex.width = 256;
