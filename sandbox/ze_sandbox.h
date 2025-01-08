@@ -3,39 +3,6 @@
 
 #include <zengine.h>
 
-internal f32 g_prim_quadVerts[] =
-{
-	-0.5, -0.5,  0,
-	 0.5, -0.5,  0,
-	 0.5,  0.5,  0,
-
-	-0.5, -0.5,  0,
-	 0.5,  0.5,  0,
-	-0.5,  0.5,  0
-};
-
-internal f32 g_prim_quadUVs[] =
-{
-	0, 0,
-	1, 0,
-	1, 1,
-
-	0, 0,
-	1, 1,
-	0, 1
-};
-
-internal f32 g_prim_quadNormals[] =
-{
-	0,  0,  -1,
-	0,  0,  -1,
-	0,  0,  -1,
-
-	0,  0,  -1,
-	0,  0,  -1,
-	0,  0,  -1
-};
-
 ze_internal ZRDataTexture g_data;
 
 ze_internal void PrintDataTex(ZRDataTexture data)
@@ -54,29 +21,12 @@ ze_internal void PrintDataTex(ZRDataTexture data)
 		itemIndex++;
 	}
 }
-ze_internal i32 Frame2(f64 delta)
-{
-	local_persist f64 duration = 0.0;
-	duration += delta;
-	printf("%f\n", duration);
-	if (duration > 2.0)
-	{
-		return NO;
-	}
-	return YES;
-}
 
 ze_internal i32 Frame(f64 delta)
 {
 	local_persist f32 degrees = 0;
 	degrees += 90.f * (f32)delta;
-	//printf("Degrees %f\n", degrees);
-	//local_persist f64 duration = 0.0;
-	//duration += delta;
-	//if (duration > 6.0)
-	//{
-	//	return NO;
-	//}
+	
 	// write some crap to the data texture.
 	g_data.Clear();
 	f32 radians = degrees * DEG2RAD;
@@ -112,40 +62,6 @@ ze_internal i32 Frame(f64 delta)
 	return YES;
 }
 
-ze_internal void FrameLoop()
-{
-	bool g_running = YES;
-	i32 g_targetFPS = 60;
-	f64 g_targetDelta = 1.f / (f32)g_targetFPS;
-	
-	f64 lastTickTime = Platform_QueryClock();
-	//i32 iterations = 0;
-	while (g_running)
-	{
-		//iterations++;
-		//if (iterations > 10000)
-		//{
-		//	g_running = false;
-		//}
-
-		f64 now = Platform_QueryClock();
-		f64 delta = now - lastTickTime;
-		// 	delta, now, lastTickTime);
-		if (delta < g_targetDelta)
-		{
-			// if we have loads of time until the next frame, sleep
-			if (g_targetDelta / delta > 2)
-			{
-				Platform_Sleep(1);
-			}
-			continue;
-		}
-		lastTickTime = now;
-		// do
-		g_running = Frame(delta);
-	}
-}
-
 ze_internal void FrameTick(ZEFrame frame)
 {
 	Frame(frame.delta);
@@ -174,7 +90,6 @@ ze_internal void Sandbox_Run()
     printf("Zealous Engine Sandbox\n");
 	g_data = ZR_AllocDataTexture();
 	ZERunLoop(60, FrameTick);
-	//FrameLoop();
 	printf("Sandbox test complete\n");
 }
 

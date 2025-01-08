@@ -732,21 +732,7 @@ ze_external zErrorCode ZRGL_Init()
 	ZRGL_UploadTexture(pixels, 32, 32, &g_magentaTexId, NO);
 	printf("...Uploaded test tex\n");
 	ZRGL_LoadCharsetTexture();
-	//g_magentaTexId = ZRGL_CreateTexture(32, 255, 0, 255, 255);
-    /*i32 imgSize = 32;
-    i32 numPixels = imgSize * imgSize;
-	i32 numBytes = numPixels * 4;
-    u8* pixels = (u8*)Platform_Alloc(numBytes);
-    for (int i = 0; i < numBytes; i += 4)
-    {
-        pixels[i + 0] = 255;
-        pixels[i + 1] = 0;
-        pixels[i + 2] = 255;
-        pixels[i + 3] = 255;
-    }
-    ZRGL_UploadTexture(pixels, imgSize, imgSize, &g_magentaTexId);
-	*/
-
+	
 	// regular sampler
     glGenSamplers(1, &g_samplerDefault2d);
 	
