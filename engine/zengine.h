@@ -526,8 +526,10 @@ ze_external void 			Platform_SwapBuffers();
 ze_external ZEWindowInfo	Platform_GetWindowInfo();
 
 ze_external void			Platform_Screenshot(const char* filePath);
-ze_external void 			Platform_SaveImage(
+ze_external void 			ZEPlatform_SaveImageRGB(
 	const char *fileName, i32 width, i32 height, const void *rgbPixels);
+ze_external void 			ZEPlatform_SaveImageRGBA(
+	const char *fileName, i32 width, i32 height, const void *rgbaPixels);
 
 ze_external zErrorCode		ZE_EngineStart(ZEApp app);
 ze_external zErrorCode		ZERunLoop(i32 targetFrameRate, ZE_FrameCallback frameCallback);

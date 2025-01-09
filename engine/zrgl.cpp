@@ -338,7 +338,7 @@ ze_external void Platform_Screenshot(const char *fileName)
     u8* pixels = (u8*)Platform_Alloc(numBytes);
     printf("ZR Screenshot - read %d/%d pixels, Allocated %dKB\n", info.width, info.height, (numBytes / 1024));
     glReadPixels(0, 0, info.width, info.height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
-    Platform_SaveImage(fileName, info.width, info.height, pixels);
+    ZEPlatform_SaveImageRGB(fileName, info.width, info.height, pixels);
     Platform_Free(pixels);
 }
 #endif
@@ -449,9 +449,12 @@ ze_external void ZR_GetAsciiUVs(char ascii, f32* minX, f32* minY, f32* maxX, f32
 	u8 c = (u8)ascii;
 	i32 x = c % asciiSheetWidth;
 	i32 y = c / asciiSheetWidth;
+    //printf("Ascii pos for %c: %d, %d\n", c, x, y);
+
 	*minX = x * quadWidth;
-	*minY = 1.f - (y * quadWidth);
 	*maxX = *minX + quadWidth;
+
+	*minY = 1.f - ((y + 1) * quadWidth);
 	*maxY = (*minY + quadWidth);
 }
 
@@ -710,7 +713,9 @@ ze_internal void ZRGL_LoadCharsetTexture()
 	printf("Load charset tex...\n");
 	BW_WriteCharsetPixels(pixels);
 	printf("...loaded chartset tex\n");
-	ZRGL_UploadTexture(pixels, 256, 256, &g_charsetTexId, NO);
+    // output it to check
+	//ZEPlatform_SaveImageRGBA("charsheet.png", 256, 256, pixels);
+    ZRGL_UploadTexture(pixels, 256, 256, &g_charsetTexId, NO);
 }
 
 
