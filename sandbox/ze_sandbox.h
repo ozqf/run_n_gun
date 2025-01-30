@@ -2,6 +2,7 @@
 #define ZE_SANDBOX_H
 
 #include <zengine.h>
+#include <ze_physics2d.h>
 
 #define MODE_SMALL_BATCH 0
 #define MODE_LARGE_BATCH 1
@@ -181,6 +182,12 @@ ze_internal void Sandbox_Run()
 		Sleep(2000);
 		return;
 	}
+
+	ZPPlatform physPlat = {};
+	physPlat.malloc = Platform_Alloc;
+	physPlat.free = Platform_Free;
+	physPlat.realloc = Platform_Realloc;
+	ZPhysicsInit(physPlat);
     
     printf("Zealous Engine Sandbox\n");
 	g_data = ZR_AllocDataTexture();

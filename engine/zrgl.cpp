@@ -597,7 +597,35 @@ ze_external void ZE_UploadMesh(i32 numVerts, f32* verts, f32* uvs, f32* normals,
     
     printf("Uploaded %d verts for vao %d, vbo %d\n", numVerts, *vaoHandle, *vboHandle);
 }
+#if 0
+ze_external u32 ZR_CreateRenderTargetTexture(i32 width, i32 height)
+{
+    u32 texHandle = 0;
+    u32 fboHandle = 0;
+    
+    ZEWindowInfo window = Platform_GetWindowInfo();
+    glGenTextures(1, &texHandle);
+    glBindTexture(GL_TEXTURE_2D, texHandle);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, window.scrWidth, window.scrHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
+    glBindTexture(GL_TEXTURE_2D, texHandle);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    
+    
+    glGenFramebuffers(1, &fboHandle);
+    glBindFramebuffer(GL_FRAMEBUFFER, fboHandle);
+    
+    glFramebufferTexture(
+        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texHandle, 0);
+    
+    // Finished
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+#endif
 ze_external void ZR_DrawTest()
 {
     printf("ZRGL - draw test...\n");
