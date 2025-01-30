@@ -462,7 +462,7 @@ ze_external void ZR_GetAsciiUVs(char ascii, f32* minX, f32* minY, f32* maxX, f32
  * bDataTexture FALSE means u8 pixel channels, u32 per pixel
  * bDataTexture TRUE means f32 pixel channels, Vec4 per pixel
  */
-ze_external void ZRGL_UploadTexture(void *pixels, i32 width, i32 height, u32 *handle, i32 bDataTexture)
+ze_external void ZR_UploadTexture(void *pixels, i32 width, i32 height, u32 *handle, i32 bDataTexture)
 {
     if (pixels == NULL)
     {
@@ -664,9 +664,14 @@ ze_external void ZR_DrawSingleQuad(f32* projection, f32* view, ZRDataTexture* da
 
 ze_external void ZR_DrawQuadBatch(f32* projection, f32* view, ZRDataTexture* data)
 {
+    i32 texHandle = data->diffuseHandle;
+    if (texHandle == 0)
+    {
+        texHandle = g_charsetTexId;
+    }
 	i32 numItems = data->index / data->stride;
 	//printf("Batch draw. Quads %d, Stride %d\n", numItems, data->stride);
-	ZRGL_UploadTexture(data->pixels, data->width, data->height, &data->dataHandle, YES);
+	ZR_UploadTexture(data->pixels, data->width, data->height, &data->dataHandle, YES);
 	//printf("Batch data uploaded\n");
 	glUseProgram(_quadBatchProgramId);
 
@@ -676,7 +681,7 @@ ze_external void ZR_DrawQuadBatch(f32* projection, f32* view, ZRDataTexture* dat
 	ZR_SetProg1i(_quadBatchProgramId, "u_dataTexSize", data->width);
 	ZR_SetProg1i(_quadBatchProgramId, "u_isBillboard", NO);
     
-	ZR_PrepareTextureUnit2D(_quadBatchProgramId, GL_TEXTURE0, 0, "u_diffuseTex", g_charsetTexId, 0);
+	ZR_PrepareTextureUnit2D(_quadBatchProgramId, GL_TEXTURE0, 0, "u_diffuseTex", texHandle, 0);
     //printf("\tBatch data handle %d\n", data->dataHandle);
 	ZR_PrepareTextureUnit2D(_quadBatchProgramId, GL_TEXTURE2, 2, "u_dataTexture", data->dataHandle, g_samplerData2d);
     //printf("Draw arrays\n");
@@ -730,7 +735,7 @@ ze_external ZRDataTexture ZR_AllocDataTexture()
 	tex.index = 0;
 	tex.dataHandle = 0;
 	tex.diffuseHandle = 0;
-	tex.stride = 3;
+	tex.stride = 4;
 	return tex;
 }
 
@@ -743,7 +748,7 @@ ze_internal void ZRGL_LoadCharsetTexture()
 	printf("...loaded chartset tex\n");
     // output it to check
 	//ZEPlatform_SaveImageRGBA("charsheet.png", 256, 256, pixels);
-    ZRGL_UploadTexture(pixels, 256, 256, &g_charsetTexId, NO);
+    ZR_UploadTexture(pixels, 256, 256, &g_charsetTexId, NO);
 }
 
 
@@ -762,7 +767,7 @@ ze_external zErrorCode ZRGL_Init()
 	ZRGL_AllocTextureU32(32, 255, 0, 255, 255, &pixels);
 	printf("...Allocated test tex\n");
 	printf("Upload test tex...\n");
-	ZRGL_UploadTexture(pixels, 32, 32, &g_magentaTexId, NO);
+	ZR_UploadTexture(pixels, 32, 32, &g_magentaTexId, NO);
 	printf("...Uploaded test tex\n");
 	ZRGL_LoadCharsetTexture();
 	

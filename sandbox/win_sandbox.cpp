@@ -3,10 +3,8 @@
 
 #include <windows.h>
 #include <shellapi.h> // for parsing command line tokens
-#include <stdio.h>
-#include <stdlib.h>
 
-#include <zengine.h>
+//#include <zengine.h>
 #include <ze_sandbox.h>
 
 extern "C" int CALLBACK WinMain(

@@ -30,6 +30,7 @@ struct ZPTransform2d
 struct ZPBodyState
 {
     ZPTransform2d t;
+    ZPVec2 size;
     ZPVec2 velocity;
     f32 angularVelocity;
     i32 externalId;

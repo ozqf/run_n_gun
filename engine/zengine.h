@@ -458,6 +458,7 @@ struct Vec4
 struct ZRQuadItem
 {
 	Vec4 pos;
+	Vec4 scale;
 	Vec4 uvs;
 	Vec4 colour;
 };
@@ -472,10 +473,11 @@ struct ZRDataTexture
 	u32 dataHandle;
 	u32 diffuseHandle;
 
-	void WriteItem(Vec4 pos, Vec4 uvs, Vec4 colour)
+	void WriteItem(Vec4 pos, Vec4 scale, Vec4 uvs, Vec4 colour)
 	{
 		pixels[index++] = pos;
 		pixels[index++] = uvs;
+		pixels[index++] = scale;
 		pixels[index++] = colour;
 	}
 
@@ -536,7 +538,7 @@ ze_external zErrorCode		ZE_EngineStart(ZEApp app);
 ze_external zErrorCode		ZERunLoop(i32 targetFrameRate, ZE_FrameCallback frameCallback);
 ze_external void			Platform_Shutdown();
 
-ze_external void 			ZE_UploadTexture(u8 *pixels, i32 width, i32 height, u32 *handle, i32 bDataTexture = NO);
+ze_external void 			ZR_UploadTexture(void *pixels, i32 width, i32 height, u32 *handle, i32 bDataTexture);
 ze_external void			ZE_UploadMesh(i32 numVerts, f32* verts, f32* uvs, f32* normals, u32* vaoHandle, u32* vboHandle);
 ze_external ZRDataTexture	ZR_AllocDataTexture();
 ze_external void 			ZR_BeginFrame(f32 clearRed, f32 clearGreen, f32 clearBlue);

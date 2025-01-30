@@ -348,6 +348,9 @@ ze_external ZPBodyState ZP_GetBodyState(zeHandle bodyId)
 	ZPBodyState state = {};
 	state.t.pos = Vec2_FromB2Vec2(vol->body->GetPosition());
 	state.t.radians = vol->body->GetAngle();
+	state.size.x = vol->def.shape.radius.x * 2.0f;
+	state.size.y = vol->def.shape.radius.y * 2.0f;
+
 	b2Vec2 v = vol->body->GetLinearVelocity();
 	state.velocity = Vec2_FromB2Vec2(v);
 	state.angularVelocity = vol->body->GetAngularVelocity();
