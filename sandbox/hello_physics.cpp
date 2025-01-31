@@ -32,9 +32,9 @@ ze_external void PhysicsTest_On()
 	physPlat.realloc = Platform_Realloc;
 	ZPhysicsInit(physPlat);
     
-    _worldVolumes[_nextWorldVolume++] = ZP_AddStaticVolume({0, -4}, {10, 1}, 1, 1);
-    _worldVolumes[_nextWorldVolume++] = ZP_AddStaticVolume({-5, 0}, {1, 8}, 1, 1);
-    _worldVolumes[_nextWorldVolume++] = ZP_AddStaticVolume({5, 0}, {1, 8}, 1, 1);
+    _worldVolumes[_nextWorldVolume++] = ZP_AddStaticVolume({0, -8}, {20, 1}, 1, 1);
+    _worldVolumes[_nextWorldVolume++] = ZP_AddStaticVolume({-10, 0}, {1, 16}, 1, 1);
+    _worldVolumes[_nextWorldVolume++] = ZP_AddStaticVolume({10, 0}, {1, 16}, 1, 1);
 
     ZPBodyDef body = {};
     body.bIsStatic = NO;
@@ -61,10 +61,10 @@ ze_external void PhysicsTestFrame(ZEFrame frame)
     {
         ZPBodyState body = ZP_GetBodyState(_worldVolumes[i]);
         //body.t.pos
-        Vec4 pos = { body.t.pos.x, body.t.pos.y, 0, 0 };
+        Vec4 pos = { body.t.pos.x, body.t.pos.y, 0, body.t.radians };
         Vec4 uvs = { 0, 0, 1, 1 };
         Vec4 colour;
-        if (i < 2)
+        if (i < 3)
         {
             colour = { 0.5, 0.5, 0.5, 1 };
         }
