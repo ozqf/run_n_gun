@@ -1,13 +1,28 @@
 /*
-2D physics box2d implementation
+ze_physics2d.h implementation using box2d
 */
-#include "ze_physics2d_internal.h"
+
+#include <ze_physics2d.h>
+
+// Box2d must be built in 64 bit, using embedded standard library and exceptions disabled.
+#include <box2d.h>
 
 #define MAX_DYNAMIC_BODIES 2048
 #define MAX_STATIC_BODIES 2048
 
 #define ZP_ASSERT(assertCondition, errMessage) 
 #define ZP_BUILD_STRING(stringVarName, stringCapacity, stringFormat, ...) 
+
+/*#ifndef ZP_ASSERT
+#define ZP_ASSERT(expression, msg)											\
+	if (!(expression))														\
+	{																		\
+		char assertBuf[512];												\
+		ZP_CrashDump();														\
+		snprintf(assertBuf, 512, "%s, %d: %s\n", __FILE__, __LINE__, msg);	\
+		ZE_Fatal(assertBuf);												\
+	}
+#endif*/
 
 struct ZPVolume2d
 {
@@ -342,10 +357,12 @@ ze_external ZPBodyState ZP_GetBodyState(zeHandle bodyId)
 	{
 		ZP_BUILD_STRING(msg, 256, "Body %d not found", bodyId);
 		ZP_ASSERT(NO, msg)
+		return {};
 	}
 
 	b2Vec2 p = vol->body->GetPosition();
 	ZPBodyState state = {};
+	state.valid = YES;
 	state.t.pos = Vec2_FromB2Vec2(vol->body->GetPosition());
 	state.t.radians = vol->body->GetAngle();
 	state.size.x = vol->def.shape.radius.x * 2.0f;
@@ -394,7 +411,7 @@ internal ZPVolume2d* GetFreeDynamicVolume()
 {
 	i32 i = g_numDynamicBodies++;
 	ZPVolume2d *volume = &g_dynamicBodies[i];
-	volume->id = g_nextDynamicId--;
+	volume->id = g_nextDynamicId++;
 	//ZPVolume2d *volume = (ZPVolume2d*)g_dynamicBodies.GetFreeSlot(g_nextDynamicId);
 	//volume->id = g_nextDynamicId;
 	//g_nextDynamicId += 1;

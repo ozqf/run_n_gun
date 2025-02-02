@@ -29,6 +29,7 @@ struct ZPTransform2d
 
 struct ZPBodyState
 {
+    i32 valid;
     ZPTransform2d t;
     ZPVec2 size;
     ZPVec2 velocity;

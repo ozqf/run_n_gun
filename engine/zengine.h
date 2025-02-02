@@ -151,9 +151,15 @@ inline zeSize ZE_Copy(void *dest, void *source, zeSize numBytes)
 	return numBytes;
 }
 
+inline void* ZE_PtrFromOffset(void* start, zeSize offset)
+{
+	return ((u8*)start + offset);
+}
+
 ///////////////////////////////////////////////////////////
 // Embedded assets
 ///////////////////////////////////////////////////////////
+#if 0
 // unit cube, -0.5 to 0.5 on x/y/z
 #define ZE_EMBEDDED_CUBE_NAME "cube"
 // unit quad, -0.5 to 0.5 on x/y
@@ -170,7 +176,7 @@ inline zeSize ZE_Copy(void *dest, void *source, zeSize numBytes)
 #define FALLBACK_CHARSET_SEMI_TRANSPARENT_TEXTURE_NAME "fallback_charset_semi_transparent"
 
 #define DEFAULT_SHADER_FLAG_ALBEDO_COLOUR_ONLY (1 << 0)
-
+#endif
 // 32 bit colours
 #define COLOUR_U32_EMPTY { 0, 0, 0, 0 }
 #define COLOUR_U32_WHITE { 255, 255, 255, 255 }
@@ -366,7 +372,7 @@ inline void M4x4_Multiply(f32 *m0, f32 *m1, f32 *result)
 }
 
 
-internal void M4x4_SetProjection(f32 *m, f32 prjNear, f32 prjFar, f32 prjLeft, f32 prjRight, f32 prjTop, f32 prjBottom)
+inline void M4x4_SetProjection(f32 *m, f32 prjNear, f32 prjFar, f32 prjLeft, f32 prjRight, f32 prjTop, f32 prjBottom)
 {
 	m[0] = (2 * prjNear) / (prjRight - prjLeft);
 	m[4] = 0;
@@ -389,7 +395,7 @@ internal void M4x4_SetProjection(f32 *m, f32 prjNear, f32 prjFar, f32 prjLeft, f
 	m[15] = 0;
 }
 
-internal void M4x4_SetOrthoProjection(f32 *m, f32 left, f32 right, f32 top, f32 bottom, f32 prjNear, f32 prjFar)
+inline void M4x4_SetOrthoProjection(f32 *m, f32 left, f32 right, f32 top, f32 bottom, f32 prjNear, f32 prjFar)
 {
 #if 1
 	M4x4_ToIdentity(m);
@@ -539,7 +545,7 @@ ze_external zErrorCode		ZERunLoop(i32 targetFrameRate, ZE_FrameCallback frameCal
 ze_external void			Platform_Shutdown();
 
 ze_external void 			ZR_UploadTexture(void *pixels, i32 width, i32 height, u32 *handle, i32 bDataTexture);
-ze_external void			ZE_UploadMesh(i32 numVerts, f32* verts, f32* uvs, f32* normals, u32* vaoHandle, u32* vboHandle);
+ze_external void			ZR_UploadMesh(i32 numVerts, f32* verts, f32* uvs, f32* normals, u32* vaoHandle, u32* vboHandle);
 ze_external ZRDataTexture	ZR_AllocDataTexture();
 ze_external void 			ZR_BeginFrame(f32 clearRed, f32 clearGreen, f32 clearBlue);
 ze_external void 			ZR_DrawTest();

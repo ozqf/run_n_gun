@@ -13,9 +13,10 @@
 @set compilerFlags=-nologo -MT -WX -W4 -wd4100 -wd4201 -wd4189 -wd4505 /Zi
 @set includes=/I../../engine
 @set compIn1=../../cli/*.cpp
-@set linkInputA=user32.lib opengl32.lib Gdi32.lib shell32.lib
+@set link1=user32.lib opengl32.lib Gdi32.lib shell32.lib
+@set link2=../engine_temp/ze.lib
 
-@cl %compilerFlags% %includes% %compIn1% %outputParam% /link %linkInputA%
+@cl %compilerFlags% %includes% %compIn1% %outputParam% /link %link1% %link2%
 
 @cd..\..
 @cd buildwin

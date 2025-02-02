@@ -1,16 +1,6 @@
-#define WIN32_LEAN_AND_MEAN
-#define VC_EXTRALEAN
 
-#include <windows.h>
-#include <shellapi.h> // for parsing command line tokens
-#include <stdio.h>
-#include <stdlib.h>
-
-#include <zengine_internal.h>
 #include <ze_assets.h>
 
-ze_internal i32 g_bConsoleInit = FALSE;
-ze_internal HWND consoleHandle;
 ze_internal bool g_running = YES;
 ze_internal ZEApp g_app = {};
 
@@ -73,7 +63,7 @@ ze_external zErrorCode ZERunLoop(i32 targetFrameRate, ZE_FrameCallback callback)
 ////////////////////////////////////////////////////////
 // initialisation
 ////////////////////////////////////////////////////////
-ze_internal void Platform_InitConsole()
+/*ze_internal void Platform_InitConsole()
 {
 	if (g_bConsoleInit)
 	{
@@ -89,7 +79,7 @@ ze_internal void Platform_InitConsole()
 	consoleHandle = GetConsoleWindow();
 	MoveWindow(consoleHandle, 1, 1, 680, 600, 1);
 	printf("[%s] Console initialized.\n", __FILE__);
-}
+}*/
 
 ze_external zErrorCode ZE_EngineStart(ZEApp app)
 {

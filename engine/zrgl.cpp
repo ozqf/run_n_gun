@@ -528,7 +528,7 @@ ze_external void ZR_UploadTexture(void *pixels, i32 width, i32 height, u32 *hand
     //return handle;
 }
 
-ze_external void ZE_UploadMesh(i32 numVerts, f32* verts, f32* uvs, f32* normals, u32* vaoHandle, u32* vboHandle)
+ze_external void ZR_UploadMesh(i32 numVerts, f32* verts, f32* uvs, f32* normals, u32* vaoHandle, u32* vboHandle)
 {
     // if handles already exist we're just updating
     if (*vaoHandle == 0)
@@ -760,7 +760,7 @@ ze_external zErrorCode ZRGL_Init()
 	glEnable              ( GL_DEBUG_OUTPUT );
 	glDebugMessageCallback( MessageCallback, 0 );
 
-    ZE_UploadMesh(6, g_prim_quadVerts, g_prim_quadUVs, g_prim_quadNormals, &_quadVAOHandle, &_quadVBOHandle);
+    ZR_UploadMesh(6, g_prim_quadVerts, g_prim_quadUVs, g_prim_quadNormals, &_quadVAOHandle, &_quadVBOHandle);
 
 	u8* pixels = NULL;
 	printf("Allocating text tex...\n");

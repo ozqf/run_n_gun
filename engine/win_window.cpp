@@ -4,6 +4,9 @@
 #include <glad.h>
 #include <glfw3.h>
 
+ze_internal i32 g_bConsoleInit = NO;
+ze_internal HWND consoleHandle;
+
 // Version of Opengl that will be requested
 const i32 MAJOR_VERSION_REQ = 3;//4;
 const i32 MINOR_VERSION_REQ = 3;
@@ -39,7 +42,28 @@ static void glfw_error_callback(int error, const char *description)
 	//Platform_Fatal(description);
 }
 
-extern "C" void Platform_SetCursorLock(i32 bLocked)
+////////////////////////////////////////////////////////
+// initialisation
+////////////////////////////////////////////////////////
+ze_external void Platform_InitConsole()
+{
+	if (g_bConsoleInit)
+	{
+		return;
+	}
+	g_bConsoleInit = TRUE;
+	// init live debug console
+	FILE *stream;
+	AllocConsole();
+	freopen_s(&stream, "conin$", "r", stdin);
+	freopen_s(&stream, "conout$", "w", stdout);
+	freopen_s(&stream, "conout$", "w", stderr);
+	consoleHandle = GetConsoleWindow();
+	MoveWindow(consoleHandle, 1, 1, 680, 600, 1);
+	printf("[%s] Console initialized.\n", __FILE__);
+}
+
+ze_external void Platform_SetCursorLock(i32 bLocked)
 {
     g_bCursorLocked = bLocked;
     if (g_window == NULL)

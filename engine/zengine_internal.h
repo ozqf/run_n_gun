@@ -4,6 +4,7 @@
 #include <zengine.h>
 
 ze_external ZEApp       ZEGetApp();
+ze_external void 		Platform_InitConsole();
 ze_external zErrorCode  Platform_CreateWindow(const char* windowName);
 ze_external void        Platform_PollEvents();
 ze_external void        ZEPlatform_SaveImageRGB(const char *fileName, i32 width, i32 height, const void *rgbPixels);

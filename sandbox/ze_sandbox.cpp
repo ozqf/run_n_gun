@@ -160,21 +160,40 @@ ze_internal void FrameTick(ZEFrame frame)
 	ZR_SubmitFrame();
 }
 
+ze_internal void SetMode(i32 newMode)
+{
+	switch (newMode)
+	{
+		case MODE_SMALL_BATCH:
+		_mode = MODE_SMALL_BATCH;
+		break;
+		case MODE_LARGE_BATCH:
+		_mode = MODE_LARGE_BATCH;
+		break;
+		case MODE_PHYSICS_TEST:
+		_mode = MODE_PHYSICS_TEST;
+		PhysicsTest_On();
+		break;
+		default:
+		_mode = MODE_SMALL_BATCH;
+		break;
+	}
+}
+
 ze_internal void KeyCallback(i32 key, i32 value, i32 mods)
 {
 	printf("App saw engine key %d, action %d, mods %d\n", key, value, mods);
 	if (key == Z_INPUT_CODE_1 && value != 0)
 	{
-		_mode = MODE_SMALL_BATCH;
+		SetMode(MODE_SMALL_BATCH);
 	}
 	else if (key == Z_INPUT_CODE_2 && value != 0)
 	{
-		_mode = MODE_LARGE_BATCH;
+		SetMode(MODE_LARGE_BATCH);
 	}
     else if (key == Z_INPUT_CODE_3 && value != 0)
     {
-        _mode = MODE_PHYSICS_TEST;
-        PhysicsTest_On();
+		SetMode(MODE_PHYSICS_TEST);
     }
 }
 
@@ -196,6 +215,7 @@ ze_external void Sandbox_Run()
     printf("Zealous Engine Sandbox\n");
 	g_data = ZR_AllocDataTexture();
 	LargeBatch_InitMode();
+	SetMode(MODE_PHYSICS_TEST);
 	ZERunLoop(60, FrameTick);
 	printf("Sandbox test complete\n");
 }
