@@ -6,7 +6,7 @@
 
 #include <zengine.h>
 
-ze_external void Sandbox_Run();
+ze_external void Sandbox_Run(i32 argc, char** argv);
 
 ze_external void PhysicsTest_On();
 ze_external void PhysicsTestFrame(ZEFrame frame);

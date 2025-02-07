@@ -540,7 +540,7 @@ ze_external void 			ZEPlatform_SaveImageRGB(
 ze_external void 			ZEPlatform_SaveImageRGBA(
 	const char *fileName, i32 width, i32 height, const void *rgbaPixels);
 
-ze_external zErrorCode		ZE_EngineStart(ZEApp app);
+ze_external zErrorCode		ZE_EngineStart(ZEApp app, i32 argc, char** argv);
 ze_external zErrorCode		ZERunLoop(i32 targetFrameRate, ZE_FrameCallback frameCallback);
 ze_external void			Platform_Shutdown();
 

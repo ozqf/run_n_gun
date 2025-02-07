@@ -81,11 +81,27 @@ ze_external zErrorCode ZERunLoop(i32 targetFrameRate, ZE_FrameCallback callback)
 	printf("[%s] Console initialized.\n", __FILE__);
 }*/
 
-ze_external zErrorCode ZE_EngineStart(ZEApp app)
+ze_internal void DumpArgv(i32 argc, char** argv)
 {
+	if (argv == NULL)
+	{
+		return;
+	}
+	printf("Args (%d): ", argc);
+	for (i32 i = 0; i < argc; ++i)
+	{
+		printf("%s,", argv[i]);
+	}
+	printf("\n");
+}
+
+ze_external zErrorCode ZE_EngineStart(ZEApp app, i32 argc, char** argv)
+{
+	Platform_InitConsole();
+	DumpArgv(argc, argv);
+	
 	zErrorCode err = ZERROR_CODE_NONE;
 	g_app = app;
-	Platform_InitConsole();
 	Platform_CreateWindow(app.windowName);
 	err = ZRGL_Init();
 	if (err != ZERROR_CODE_NONE)

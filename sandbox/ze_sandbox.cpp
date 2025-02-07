@@ -197,14 +197,14 @@ ze_internal void KeyCallback(i32 key, i32 value, i32 mods)
     }
 }
 
-ze_external void Sandbox_Run()
+ze_external void Sandbox_Run(i32 argc, char** argv)
 {
 	ZEApp app = {};
 	app.windowName = "Zealous Engine Sandbox";
 	app.frameCallback = FrameTick;
 	app.keyCallback = KeyCallback;
 
-	zErrorCode err =  ZE_EngineStart(app);
+	zErrorCode err =  ZE_EngineStart(app, argc, argv);
 	if (err != ZERROR_CODE_NONE)
 	{
 		printf("Engine startup failed with code %d\n", err);
