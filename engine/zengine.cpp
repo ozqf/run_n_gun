@@ -49,6 +49,11 @@ ze_external zErrorCode ZERunLoop(i32 targetFrameRate, ZE_FrameCallback callback)
 			}
 			continue;
 		}
+		// clamp delta to max eg if program was frozen
+		if (delta > g_targetDelta)
+		{
+			delta = g_targetDelta;
+		}
 		lastTickTime = now;
 		// do
 		Platform_PollEvents();
