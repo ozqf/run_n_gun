@@ -4,6 +4,10 @@
 ze_internal bool g_running = YES;
 ze_internal ZEApp g_app = {};
 
+ze_external i32 g_specialMode = SPECIAL_APP_MODE_NONE;
+
+ze_external i32 ZEGetSpecialMode() { return g_specialMode; }
+
 ze_external i32 ZEGetAppFlags() { return g_app.flags; }
 
 ze_external ZEApp ZEGetApp() { return g_app; }
@@ -33,10 +37,12 @@ ze_external zErrorCode ZERunLoop(i32 targetFrameRate, ZE_FrameCallback callback)
 {
 	i32 g_targetFPS = 60;
 	f64 g_targetDelta = 1.f / (f32)g_targetFPS;
-	
+	i64 frameCount = 0;
+	i64 fixedFrameCount = 0;
 	f64 lastTickTime = Platform_QueryClock();
 	while (g_running)
 	{
+		frameCount++;
 		f64 now = Platform_QueryClock();
 		f64 delta = now - lastTickTime;
 		// 	delta, now, lastTickTime);
@@ -49,6 +55,7 @@ ze_external zErrorCode ZERunLoop(i32 targetFrameRate, ZE_FrameCallback callback)
 			}
 			continue;
 		}
+		fixedFrameCount++;
 		// clamp delta to max eg if program was frozen
 		if (delta > g_targetDelta)
 		{
@@ -60,6 +67,14 @@ ze_external zErrorCode ZERunLoop(i32 targetFrameRate, ZE_FrameCallback callback)
 		ZEFrame frame = {};
 		frame.delta = (f32)delta;
 		callback(frame);
+		
+		// test mode!
+		if (ZEGetSpecialMode() == SPECIAL_APP_MODE_SINGLE_SHOT && fixedFrameCount > 1)
+		{
+			printf("Single Shot Mode - screenshot and shutdown\n");
+			Platform_Screenshot("screenshot.png");
+			g_running = NO;
+		}
 	}
 	printf("Shutting down\n");
 	return ZERROR_CODE_NONE;
@@ -86,24 +101,25 @@ ze_external zErrorCode ZERunLoop(i32 targetFrameRate, ZE_FrameCallback callback)
 	printf("[%s] Console initialized.\n", __FILE__);
 }*/
 
-ze_internal void DumpArgv(i32 argc, char** argv)
-{
-	if (argv == NULL)
-	{
-		return;
-	}
-	printf("Args (%d): ", argc);
-	for (i32 i = 0; i < argc; ++i)
-	{
-		printf("%s,", argv[i]);
-	}
-	printf("\n");
-}
-
 ze_external zErrorCode ZE_EngineStart(ZEApp app, i32 argc, char** argv)
 {
-	Platform_InitConsole();
-	DumpArgv(argc, argv);
+	ZE_CommandLineInit(argc, argv);
+
+	i32 i = ZE_FindCommandLineIndex(NULL, "--single");
+	FILE* f = NULL;
+	if (i >= 0)
+	{
+		g_specialMode = SPECIAL_APP_MODE_SINGLE_SHOT;
+		freopen_s(&f, "single_shot_output.log", "w", stdout);
+	}
+	else
+	{
+		Platform_InitConsole();
+	}
+
+	printf("RNG Engine start\n");
+	if (i >= 0) { printf("Single shot mode enabled\n"); }
+
 	
 	zErrorCode err = ZERROR_CODE_NONE;
 	g_app = app;

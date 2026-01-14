@@ -3,9 +3,6 @@
 
 #include <zengine.h>
 
-static void rng_run()
-{
-    printf("Run N Gun\n");
-}
+ze_external void rng_start(int argc, char** argv);
 
 #endif // RUN_N_GUN_H

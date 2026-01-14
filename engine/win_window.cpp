@@ -42,6 +42,15 @@ static void glfw_error_callback(int error, const char *description)
 	//Platform_Fatal(description);
 }
 
+ze_external void Platform_ErrorBox(char* message)
+{
+	MessageBoxA(0,
+        (LPCSTR)message,
+        (LPCSTR) "Error",
+        MB_OK | MB_ICONINFORMATION
+    );
+}
+
 ////////////////////////////////////////////////////////
 // initialisation
 ////////////////////////////////////////////////////////
@@ -302,8 +311,8 @@ extern "C" void Platform_SwapBuffers()
 
 extern "C" zErrorCode Platform_CreateWindow(const char* windowName)
 {
-    Win_InitTimer();
     printf("Spawn window\n");
+    Win_InitTimer();
     glfwSetErrorCallback(glfw_error_callback);
 
     // Check glfw is okay
@@ -328,13 +337,13 @@ extern "C" zErrorCode Platform_CreateWindow(const char* windowName)
     g_monitorSize[0] = scrWidth;
     g_monitorSize[1] = scrHeight;
     g_monitorAspect = (f32)scrWidth / (f32)scrHeight;
-
+	
     if (g_bWindowed == YES)
     {
         // Resolution locked window
         // Disable decoration and set window size to desktop size
         // to have borderless fullscreen
-        glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
+        glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
         scrWidth = g_pendingWidth;
         scrHeight = g_pendingHeight;
     }
@@ -342,6 +351,13 @@ extern "C" zErrorCode Platform_CreateWindow(const char* windowName)
     {
         glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
     }
+    
+	// Hide the window if 'special mode' is one shot mode
+	if (ZEGetSpecialMode() == SPECIAL_APP_MODE_SINGLE_SHOT)
+	{
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+	}
+
     // record screen size
     g_windowSize[0] = scrWidth;
     g_windowSize[1] = scrHeight;

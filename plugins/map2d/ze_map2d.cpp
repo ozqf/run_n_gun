@@ -85,12 +85,12 @@ struct Map2dCounts
 
 static i32 g_bInitialised = NO;
 static i32 g_bVerboseLoad = NO;
-static ZEngine g_ze;
+//static ZEngine g_ze;
 
-ZCMD_CALLBACK(Exec_Map2dCommand)
-{
+// ZCMD_CALLBACK(Exec_Map2dCommand)
+// {
 
-}
+// }
 
 ze_internal Map2dCounts Map2d_CountMapComponentsInAscii(char* txt)
 {
@@ -249,7 +249,7 @@ ze_internal zErrorCode Map2d_FromAscii(char* txt, Map2d** result)
         + lineBytes
         + entBytes
         + stringBytes;
-    i8* start = (i8*)g_ze.system.Malloc(total);
+    i8* start = (i8*)Platform_Alloc(total);
     ZE_SET_ZERO(start, total);
     Map2d* map = (Map2d*)start;
     map->totalBytes = total;
@@ -342,14 +342,14 @@ ze_internal zErrorCode Map2d_FromAscii(char* txt, Map2d** result)
     }
 
     *result = map;
-	return ZE_ERROR_NONE;
+	return ZERROR_CODE_NONE;
 }
 
 ze_external Map2d* Map2d_ReadEmbedded(i32 index)
 {
     ZE_ASSERT(g_bInitialised, "Map2d not initialised")
     Map2d* map = NULL;
-    zErrorCode err = ZE_ERROR_NONE;
+    zErrorCode err = ZERROR_CODE_NONE;
     char* source = NULL;
     switch (index)
     {
@@ -391,7 +391,8 @@ ze_external Map2dReader Map2d_CreateReader(Map2d* map)
 
 ze_external void Map2d_Free(Map2d* map)
 {
-    g_ze.system.Free(map);
+    Platform_Free(map);
+    //g_ze.system.Free(map);
 }
 
 ze_external void Map2d_DebugDump(Map2d* map)
@@ -443,11 +444,11 @@ ze_external void Map2d_DebugDump(Map2d* map)
     printf("\n");
 }
 
-ze_external void Map2d_Init(ZEngine engine)
+ze_external void Map2d_Init(/*ZEngine engine*/)
 {
-    g_ze = engine;
+    //g_ze = engine;
     g_bInitialised = YES;
     //
-    g_ze.textCommands.RegisterCommand(
-		"map2d", "Save/Load for map 2d editor, eg map2d save foo", Exec_Map2dCommand);
+    //g_ze.textCommands.RegisterCommand(
+	//	"map2d", "Save/Load for map 2d editor, eg map2d save foo", Exec_Map2dCommand);
 }

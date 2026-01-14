@@ -24,3 +24,6 @@
 # include required libs
 !/lib/*/*.lib
 screenshot.png
+
+# runtime stuff to ignore
+/buildwin/single_shot_output.log

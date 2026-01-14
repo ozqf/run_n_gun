@@ -60,6 +60,11 @@ static_assert(sizeof(f64) == 8, "Code requires f64 size == 8");
 #define ZERROR_CODE_UNSPECIFIED 1
 #define ZERROR_CODE_BAD_PARAMETER 2
 #define ZERROR_CODE_NO_CAPACITY 3
+#define ZERROR_CODE_OUT_OF_BOUNDS 4
+#define ZERROR_CODE_NOT_FOUND 5
+#define ZERROR_CODE_ALLOCATION_FAILED 5
+
+#define ZSENTINEL_INT 0xDEADBEEF
 
 //////////////////////////////////////////////////////////////////////
 // Input codes
@@ -142,19 +147,22 @@ static_assert(sizeof(f64) == 8, "Code requires f64 size == 8");
 
 #define Z_INPUT_CODE__LAST__ 74
 
-///////////////////////////////////////////////////////////////////////
-// PRIMITIVE FUNCTIONS
-///////////////////////////////////////////////////////////////////////
-inline zeSize ZE_Copy(void *dest, void *source, zeSize numBytes)
-{
-	memcpy(dest, source, numBytes);
-	return numBytes;
-}
+#define ZE_ASSERT(statement, message) \
+if (!(statement)) \
+{ Platform_ErrorBox(message); }
 
-inline void* ZE_PtrFromOffset(void* start, zeSize offset)
-{
-	return ((u8*)start + offset);
-}
+
+#ifndef ZE_SET_ZERO
+#define ZE_SET_ZERO(ptrToMemory, numberOfBytesToZero) \
+	memset(##ptrToMemory, 0, numberOfBytesToZero##);
+#endif
+
+
+typedef void* (*ZE_mallocFunction)(const zeSize numBytes);
+typedef void (*ZE_freeFunction)(const void * memory);
+
+#define SPECIAL_APP_MODE_NONE 0
+#define SPECIAL_APP_MODE_SINGLE_SHOT 1
 
 ///////////////////////////////////////////////////////////
 // Embedded assets
@@ -456,9 +464,38 @@ inline void ZE_Setup3DProjection(
 // DATA TYPES
 ///////////////////////////////////////////////////////////////////////
 
+struct ZEMemBlock
+{
+	i32 tag; // identifier, bit field, whatever
+	i32 sentinel; // memcheck, should always == ZSENTINEL_INT
+	i64 size; // jump to next block
+};
+
+struct ZEMemBlockReader
+{
+	i8* start;
+	i64 size;
+	i64 cursor;
+};
+
+struct Vec2
+{
+	f32 x, y;
+};
+
+struct Vec3
+{
+	f32 x, y, z;
+};
+
 struct Vec4
 {
 	f32 x, y, z, w;
+};
+
+struct Point2
+{
+	i32 x, y;
 };
 
 struct ZRQuadItem
@@ -511,6 +548,10 @@ struct ZEFrame
 
 typedef void (ZE_FrameCallback)(ZEFrame frame);
 typedef void (ZE_KeyCallback)(i32 key, i32 value, i32 mods);
+typedef void (*ZE_ConsoleCallback)(char* fullString, char** tokens, i32 numTokens);
+
+#define ZCMD_CALLBACK(functionName) \
+internal void functionName(char* fullString, char** tokens, i32 numTokens)
 
 struct ZEApp
 {
@@ -521,18 +562,364 @@ struct ZEApp
 };
 
 ///////////////////////////////////////////////////////////////////////
-// FUNCTIONS
+// INTERNAL FUNCTIONS
+///////////////////////////////////////////////////////////////////////
+
+inline zeSize ZE_Copy(void *dest, void *source, zeSize numBytes)
+{
+	memcpy(dest, source, numBytes);
+	return numBytes;
+}
+
+inline void* ZE_PtrFromOffset(void* start, zeSize offset)
+{
+	return ((u8*)start + offset);
+}
+
+static i32 ZStr_LenNoTerminator(const char* str)
+{
+    i32 count = 0;
+    while (str[count]) { ++count; }
+    return count;
+}
+
+static i32 ZStr_Len(const char* str)
+{
+    i32 count = 0;
+    while (str[count]) { ++count; }
+    // include terminator
+    return count + 1;
+}
+
+internal i32 ZStr_Equal(const char *a, const char *b)
+{
+    if (a == NULL || b == NULL)
+    {
+        return (a == b);
+    }
+    while (*a == *b)
+    {
+        if (*a == '\0' || *b == '\0')
+        {
+            return (*a == *b);
+        }
+        ++a;
+        ++b;
+    }
+    return NO;
+}
+
+/**
+ * Returns chars written
+ * Copy a string without exceeding the specified limit
+ * Will always patch a NULL terminator at the final position
+ */
+internal i32 ZStr_CopyLimited(const char *source, char *target, zeSize limit)
+{
+    if (limit < 1) { return 0; }
+    i32 written = 0;
+    char* targetStart = target;
+    while (*source && limit > 0)
+    {
+        *target++ = *source++;
+        --limit;
+        ++written;
+    }
+	*target = '\0';
+    return ++written;
+}
+
+// decimal or hexadecimal
+// negative and positive
+// "-54" "12" "0x432146fd" "-0X4AbdC"
+internal i32 ZStr_AsciToInt32(const char *str)
+{
+    i32 sign = 1;
+    i32 val = 0;
+    char c;
+    if (*str == '-')
+    {
+        sign = -1;
+        ++str;
+    }
+
+    // hexadecimal
+    if (*str == '0' && (str[1] == 'x' || str[1] == 'X'))
+    {
+        // Move past first two characters
+        str += 2;
+        while (1)
+        {
+            c = *str;
+            ++str;
+            if (c >= '0' && c <= '9')
+            {
+                val = val * 16 + c - '0';
+            }
+            else if (c >= 'a' && c <= 'f')
+            {
+                val = val * 16 + c - 'a' + 10;
+            }
+            else if (c >= 'A' && c <= 'F')
+            {
+                val = val * 16 + c - 'A' + 10;
+            }
+            else
+            {
+                return val * sign;
+            }
+        }
+    }
+
+    // decimal
+    while (true)
+    {
+        c = *str;
+        ++str;
+        if (c < '0' || c > '9')
+        {
+            // no numerical character
+            return sign * val;
+        }
+        // '0' char = 48 in asci, so
+        // c minus '0' = c minus 48
+        // val * 10 moves to next digit
+        // then add new value
+        val = (val * 10) + (c - '0');
+    }
+    return val * sign;
+}
+
+
+/**
+ * Returns 1 if there is still text remaining
+ */
+internal i32 ZStr_ReadLine(char** source, char* target, zeSize capacity)
+{
+    i32 i = 0;
+    char* cursor = *source;
+    for(;;)
+    {
+        char c = cursor[i];
+        // end of line or buffer, but not end of text
+        if (c == '\n')
+        {
+            *source = &cursor[i] + 1;
+            target[i] = '\0';
+            // printf("End line at %d on code %d\n", i, c);
+            return YES;
+        }
+        // end of text
+        else if (c == '\0')
+        {
+            *source = cursor + 1;
+            target[i] = '\0';
+            // printf("End line at %d on code %d\n", i, c);
+            return NO;
+        }
+        // carriage return. replace it with null but continue to 
+        // make sure the newline is consumed as well.
+        if (c == '\r')
+        {
+            c = ' ';
+        }
+        target[i] = c;
+        i += 1;
+    }
+}
+
+internal i32 ZStr_FindFirstCharMatch(char* start, char match)
+{
+    i32 i = 0;
+    for(;;)
+    {
+        char c = start[i];
+        if (c == match) { return i; }
+        if (c == '\0') { break; }
+        i++;
+    }
+    return -1;
+}
+
+internal Point2 ZStr_FindToken(const char* str, i32 tokenIndex, char separator)
+{
+    Point2 p = {};
+    i32 currentTokenIndex = 0;
+    i32 i = 0;
+    i32 bInToken = NO;
+    char c;
+    while ((c = str[i++]) != '\0')
+    {
+        if (bInToken)
+        {
+            if (c == separator)
+            {
+                bInToken = NO;
+                if (currentTokenIndex == tokenIndex)
+                {
+                    p.y = i - 1;
+                    return p;
+                }
+                currentTokenIndex += 1;
+            }
+            continue;
+        }
+        else
+        {
+            if (c != separator)
+            {
+                bInToken = YES;
+                if (currentTokenIndex == tokenIndex)
+                {
+                    p.x = i - 1;
+                }
+            }
+        }
+    }
+    return p;
+}
+
+/**
+ * Find string tokens:
+ * > Copies source into dest, placing '\0' at the end of every token
+ * > Destination must be at least as long as source!
+ * > Returns number of tokens found, up to the max allowed by
+ * the passed in results array
+ * > Should be okay if destination and token list memory is not cleared.
+ * > Send same pointer to source and destination to tokenise in-place.
+ */
+internal i32 ZStr_Tokenise(const char* source, char* destination, char** tokens, i32 maxTokens)
+{
+    i32 len = ZStr_Len(source);
+    i32 tokensCount = 0;
+
+    i32 readPos = 0;
+    i32 writePos = 0;
+
+    u8 reading = true;
+    u8 readingToken = 0;
+    while (reading)
+    {
+        char c = *(source + readPos);
+        if (readingToken)
+        {
+            if (c == ' ')
+            {
+				// finish token
+                *(destination + writePos) = '\0';
+				readingToken = 0;
+            }
+            else if (c == '\0')
+            {
+				// finish token and complete string
+                *(destination + writePos) = '\0';
+				readingToken = 0;
+                reading = false;
+            }
+            else
+            {
+                *(destination + writePos) = c;
+            }
+            readPos++;
+            writePos++;
+
+			// Check if finished and results are full
+			if (readingToken == 0 && tokensCount >= maxTokens)
+			{
+				reading = false;
+			}
+        }
+        else
+        {
+			// probe forward for a token start
+            if (c == ' ' || c == '\t')
+            {
+                readPos++;
+            }
+            else if (c == '\0')
+            {
+                *(destination + writePos) = '\0';
+                reading = false;
+            }
+            else
+            {
+				// Start token
+                readingToken = 1;
+                *(destination + writePos) = c;
+
+                tokens[tokensCount++] = (destination + writePos);
+
+                readPos++;
+                writePos++;
+            }
+        }
+    }
+
+    return tokensCount;
+}
+
+ze_internal Point2 ZE_MeasureTextBlock(char* text)
+{
+	Point2 p = {};
+	p.x = 0;
+	p.y = 0;
+	
+	i32 curLen = 0;
+	i32 i = 0;
+	char c = text[i];
+	while (c != '\0')
+	{
+		if (c == '\n')
+		{
+			p.y += 1;
+			if (curLen > p.x)
+			{
+				p.x = curLen;
+				curLen = 0;
+			}
+		}
+		else
+		{
+			curLen += 1;
+		}
+		i++;
+		c = text[i];
+	}
+
+	return p;
+}
+
+// Count chars to end of line/text
+ze_internal i32 ZE_MeasureLineLength(char* text)
+{
+	i32 i = 0;
+	char c = text[i];
+	while (c != '\0' && c != '\n')
+	{
+		i++;
+		c = text[i];
+	}
+	return i;
+}
+
+///////////////////////////////////////////////////////////////////////
+// EXPORTED FUNCTIONS
 ///////////////////////////////////////////////////////////////////////
 
 ze_external void			Platform_SetCursorLock(i32 bLocked);
 ze_external void			Platform_Sleep(i32 milliseconds);
 ze_external f64				Platform_QueryClock();
+ze_external void			Platform_ErrorBox(char* message);
 
 ze_external void* 			Platform_Alloc(zeSize size);
 ze_external void* 			Platform_Realloc(void* ptr, zeSize size);
 ze_external void 			Platform_Free(void* ptr);
 ze_external void 			Platform_SwapBuffers();
 ze_external ZEWindowInfo	Platform_GetWindowInfo();
+
+ze_external i32             ZE_FindCommandLineIndex(char* shortName, char* longName);
+ze_external i32             ZE_GetCommandLineArgCount();
+ze_external char*           ZE_GetCommandLineArg(i32 index);
 
 ze_external void			Platform_Screenshot(const char* filePath);
 ze_external void 			ZEPlatform_SaveImageRGB(
@@ -541,8 +928,12 @@ ze_external void 			ZEPlatform_SaveImageRGBA(
 	const char *fileName, i32 width, i32 height, const void *rgbaPixels);
 
 ze_external zErrorCode		ZE_EngineStart(ZEApp app, i32 argc, char** argv);
+ze_external i32				ZEGetSpecialMode();
 ze_external zErrorCode		ZERunLoop(i32 targetFrameRate, ZE_FrameCallback frameCallback);
 ze_external void			Platform_Shutdown();
+
+ze_external zErrorCode		ZE_RegisterConsoleCommand(char *name, char *description, ZE_ConsoleCallback callback);
+ze_external void			ZE_QueueConsoleCommand(char* cmd);
 
 ze_external void 			ZR_UploadTexture(void *pixels, i32 width, i32 height, u32 *handle, i32 bDataTexture);
 ze_external void			ZR_UploadMesh(i32 numVerts, f32* verts, f32* uvs, f32* normals, u32* vaoHandle, u32* vboHandle);

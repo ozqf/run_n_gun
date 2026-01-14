@@ -1,3 +1,6 @@
+/*
+Windows entry point for Run N Gun
+*/
 #define WIN32_LEAN_AND_MEAN
 #define VC_EXTRALEAN
 
@@ -10,8 +13,6 @@ extern "C" int CALLBACK WinMain(
     LPSTR lpCmdLine,
     int nCmdShow)
 {
-	ZE_EngineStart();
-    rng_run();
-	Sleep(2000);
+    rng_start(__argc, __argv);
 	return 0;
 }
